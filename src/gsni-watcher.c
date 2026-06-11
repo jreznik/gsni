@@ -45,6 +45,7 @@ struct _GsniWatcher {
     GDBusProxy      *proxy;
     guint            watch_id;
     GList           *items;         /* GsniItem * (borrowed) */
+    GHashTable      *item_names;    /* GsniItem * → gchar * (bus name) */
     gboolean         watcher_present;
 };
 
@@ -115,14 +116,12 @@ register_pending_items(GsniWatcher *self)
 {
     for (GList *l = self->items; l; l = l->next) {
         GsniItem *item = GSNI_ITEM(l->data);
-
-        GDBusConnection *conn = gsni_item_get_connection(item);
-        const gchar *unique_name = g_dbus_connection_get_unique_name(conn);
+        const gchar *name = g_hash_table_lookup(self->item_names, item);
 
         GError *error = NULL;
         GVariant *result = g_dbus_proxy_call_sync(self->proxy,
             "RegisterStatusNotifierItem",
-            g_variant_new("(s)", unique_name),
+            g_variant_new("(s)", name ? name : ""),
             G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
 
         if (result == NULL) {
@@ -149,6 +148,7 @@ gsni_watcher_get_for_connection(GDBusConnection *connection)
 
     w = g_new0(GsniWatcher, 1);
     w->connection = connection;
+    w->item_names = g_hash_table_new(g_direct_hash, g_direct_equal);
 
     w->watch_id = g_bus_watch_name_on_connection(connection,
         GSNI_WATCHER_NAME,
@@ -164,7 +164,8 @@ gsni_watcher_get_for_connection(GDBusConnection *connection)
 }
 
 void
-gsni_watcher_register_item(GsniWatcher *self, GsniItem *item)
+gsni_watcher_register_item(GsniWatcher *self, GsniItem *item,
+                           const gchar *bus_name)
 {
     g_return_if_fail(self != NULL);
     g_return_if_fail(GSNI_IS_ITEM(item));
@@ -174,15 +175,13 @@ gsni_watcher_register_item(GsniWatcher *self, GsniItem *item)
         return;
 
     self->items = g_list_prepend(self->items, item);
+    g_hash_table_insert(self->item_names, item, g_strdup(bus_name));
 
     if (self->watcher_present) {
-        GDBusConnection *conn = gsni_item_get_connection(item);
-        const gchar *unique = g_dbus_connection_get_unique_name(conn);
-
         GError *error = NULL;
         GVariant *result = g_dbus_proxy_call_sync(self->proxy,
             "RegisterStatusNotifierItem",
-            g_variant_new("(s)", unique),
+            g_variant_new("(s)", bus_name ? bus_name : ""),
             G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
 
         if (result == NULL) {

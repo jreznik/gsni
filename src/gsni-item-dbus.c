@@ -107,9 +107,6 @@ gsni_item_dbus_method_call(GDBusConnection       *connection,
     } else if (g_str_equal(method, "ContextMenu")) {
         gint x, y;
         g_variant_get(params, "(ii)", &x, &y);
-        /* ContextMenu is handled by the host — we don't need to do
-         * anything other than acknowledge it.  The host reads the Menu
-         * property and renders it. */
         g_dbus_method_invocation_return_value(invocation, NULL);
 
     } else if (g_str_equal(method, "Scroll")) {
@@ -184,7 +181,7 @@ gsni_item_dbus_get_property(GDBusConnection *connection,
     }
 
     if (g_str_equal(property, "Menu"))
-        return g_variant_new("(o)", self->menu_path);
+        return g_variant_new_object_path(self->menu_path);
 
     if (g_str_equal(property, "ItemIsMenu"))
         return g_variant_new_boolean(gsni_item_get_item_is_menu(self->item));
@@ -279,7 +276,7 @@ gsni_item_dbus_new(GsniItem *item)
 
     self->connection = gsni_item_get_connection(item);
     self->object_path = g_strdup(gsni_item_get_object_path(item));
-    self->menu_path = g_strdup_printf("%s/MenuBar", self->object_path);
+    self->menu_path = g_strdup("/MenuBar");
 
     return self;
 }

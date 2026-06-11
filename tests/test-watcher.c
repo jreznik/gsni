@@ -43,7 +43,7 @@ test_watcher_register_unregister(void)
     GsniItem *item = gsni_item_new("test-watcher", conn, NULL);
     GsniWatcher *w = gsni_watcher_get_for_connection(conn);
 
-    gsni_watcher_register_item(w, item);
+    gsni_watcher_register_item(w, item, NULL);
     gsni_watcher_unregister_item(w, item);
 
     g_object_unref(item);

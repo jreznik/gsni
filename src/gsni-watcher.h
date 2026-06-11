@@ -16,7 +16,8 @@ typedef struct _GsniWatcher GsniWatcher;
 
 GsniWatcher *gsni_watcher_get_for_connection(GDBusConnection *connection);
 
-void gsni_watcher_register_item  (GsniWatcher *self, GsniItem *item);
+void gsni_watcher_register_item  (GsniWatcher *self, GsniItem *item,
+                                   const gchar *bus_name);
 void gsni_watcher_unregister_item(GsniWatcher *self, GsniItem *item);
 
 G_END_DECLS

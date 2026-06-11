@@ -13,10 +13,14 @@
 #include "gsni-item-dbus.h"
 #include "gsni-watcher.h"
 
+#include <unistd.h>
+
 /*
  * Protocol constants.
  */
 #define GSNI_PROTOCOL_VERSION  0
+
+static gint gsni_item_counter = 1;
 
 struct _GsniItem
 {
@@ -81,6 +85,7 @@ typedef struct {
     GsniWatcher      *watcher;
 
     gchar            *activation_token;
+    gchar            *bus_name;        /* well-known name for watcher */
 } GsniItemPrivate;
 
 G_DEFINE_TYPE_WITH_PRIVATE(GsniItem, gsni_item, G_TYPE_OBJECT)
@@ -140,6 +145,7 @@ gsni_item_finalize(GObject *object)
     g_free(priv->attention_movie_name);
     g_free(priv->icon_theme_path);
     g_free(priv->activation_token);
+    g_free(priv->bus_name);
 
     if (priv->tooltip) {
         gsni_tool_tip_free(priv->tooltip);
@@ -448,11 +454,40 @@ gsni_item_register(GsniItem *self, GError **error)
         gsni_item_dbus_update_menu(priv->dbus, priv->menu,
                                    priv->action_group);
 
+    if (priv->menu)
+        gsni_item_dbus_emit_signal(priv->dbus, "NewMenu", NULL);
+
+    if (priv->bus_name == NULL) {
+        priv->bus_name = g_strdup_printf(
+            "org.kde.StatusNotifierItem-%u-%d",
+            (guint)getpid(),
+            g_atomic_int_add(&gsni_item_counter, 1));
+
+        GError *name_err = NULL;
+        GVariant *name_result = g_dbus_connection_call_sync(
+            priv->connection,
+            "org.freedesktop.DBus",
+            "/org/freedesktop/DBus",
+            "org.freedesktop.DBus",
+            "RequestName",
+            g_variant_new("(su)", priv->bus_name,
+                          G_BUS_NAME_OWNER_FLAGS_DO_NOT_QUEUE),
+            NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &name_err);
+
+        if (name_result) {
+            g_variant_unref(name_result);
+        } else {
+            g_warning("Failed to request name %s: %s", priv->bus_name,
+                      name_err->message);
+            g_clear_error(&name_err);
+        }
+    }
+
     if (priv->watcher == NULL) {
         priv->watcher = gsni_watcher_get_for_connection(priv->connection);
     }
 
-    gsni_watcher_register_item(priv->watcher, self);
+    gsni_watcher_register_item(priv->watcher, self, priv->bus_name);
 
     priv->is_registered = TRUE;
     g_object_notify(G_OBJECT(self), "connected");
