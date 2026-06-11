@@ -91,17 +91,6 @@ G_DEFINE_TYPE_WITH_PRIVATE(GsniItem, gsni_item, G_TYPE_OBJECT)
  */
 #define PRIV(item) ((GsniItemPrivate *) gsni_item_get_instance_private(item))
 
-static gchar *
-sanitize_id_for_path(const gchar *id)
-{
-    gchar *clean = g_strdup(id);
-    for (gchar *p = clean; *p != '\0'; p++) {
-        if (!g_ascii_isalnum(*p) && *p != '_')
-            *p = '_';
-    }
-    return clean;
-}
-
 static void
 gsni_item_constructed(GObject *object)
 {
@@ -117,8 +106,7 @@ gsni_item_constructed(GObject *object)
         g_object_ref(priv->connection);
 
     {
-        g_autofree gchar *clean_id = sanitize_id_for_path(priv->id);
-        priv->object_path = g_strdup_printf("/org/libgsni/%s", clean_id);
+        priv->object_path = g_strdup("/StatusNotifierItem");
     }
 }
 

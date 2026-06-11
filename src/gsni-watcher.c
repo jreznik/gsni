@@ -118,17 +118,12 @@ register_pending_items(GsniWatcher *self)
 
         GDBusConnection *conn = gsni_item_get_connection(item);
         const gchar *unique_name = g_dbus_connection_get_unique_name(conn);
-        const gchar *path = gsni_item_get_object_path(item);
-
-        gchar *service = g_strdup_printf("%s%s", unique_name, path);
 
         GError *error = NULL;
         GVariant *result = g_dbus_proxy_call_sync(self->proxy,
             "RegisterStatusNotifierItem",
-            g_variant_new("(s)", service),
+            g_variant_new("(s)", unique_name),
             G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
-
-        g_free(service);
 
         if (result == NULL) {
             g_warning("Failed to register item: %s", error->message);
@@ -183,17 +178,12 @@ gsni_watcher_register_item(GsniWatcher *self, GsniItem *item)
     if (self->watcher_present) {
         GDBusConnection *conn = gsni_item_get_connection(item);
         const gchar *unique = g_dbus_connection_get_unique_name(conn);
-        const gchar *path = gsni_item_get_object_path(item);
 
-        gchar *service = g_strdup_printf("%s%s", unique, path);
         GError *error = NULL;
-
         GVariant *result = g_dbus_proxy_call_sync(self->proxy,
             "RegisterStatusNotifierItem",
-            g_variant_new("(s)", service),
+            g_variant_new("(s)", unique),
             G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
-
-        g_free(service);
 
         if (result == NULL) {
             g_warning("Failed to register item: %s", error->message);
