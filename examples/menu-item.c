@@ -63,6 +63,7 @@ main(int argc, char *argv[])
     gsni_item_set_title(item, "Simple Tray Demo");
     gsni_item_set_icon_name(item, "applications-other");
     gsni_item_set_status(item, GSNI_STATUS_ACTIVE);
+    gsni_item_set_item_is_menu(item, TRUE);
     gsni_item_set_tooltip(item, NULL, "Simple Tray Demo",
                           "Click for menu");
 

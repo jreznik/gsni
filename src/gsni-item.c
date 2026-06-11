@@ -345,7 +345,7 @@ gsni_item_class_init(GsniItemClass *klass)
     g_object_class_install_property(object_class, PROP_ITEM_IS_MENU,
         g_param_spec_boolean("item-is-menu", "Item is menu",
                              "Only context menu, no activation",
-                             FALSE,
+                             TRUE,
                              G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
     g_object_class_install_property(object_class, PROP_ICON_THEME_PATH,
@@ -408,6 +408,7 @@ gsni_item_init(GsniItem *self)
     GsniItemPrivate *priv = PRIV(self);
     priv->category = GSNI_CATEGORY_APPLICATION_STATUS;
     priv->status = GSNI_STATUS_PASSIVE;
+    priv->item_is_menu = TRUE;
 }
 
 /* --- public API --- */
