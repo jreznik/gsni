@@ -71,6 +71,7 @@ struct _GsniItemDbus {
     GsniItem        *item;
     GDBusConnection *connection;
     gchar           *object_path;
+    gchar           *menu_path;
     guint            reg_id;
 
     /* Menu export */
@@ -183,7 +184,7 @@ gsni_item_dbus_get_property(GDBusConnection *connection,
     }
 
     if (g_str_equal(property, "Menu"))
-        return g_variant_new("(o)", self->object_path);
+        return g_variant_new("(o)", self->menu_path);
 
     if (g_str_equal(property, "ItemIsMenu"))
         return g_variant_new_boolean(gsni_item_get_item_is_menu(self->item));
@@ -278,6 +279,7 @@ gsni_item_dbus_new(GsniItem *item)
 
     self->connection = gsni_item_get_connection(item);
     self->object_path = g_strdup(gsni_item_get_object_path(item));
+    self->menu_path = g_strdup_printf("%s/MenuBar", self->object_path);
 
     return self;
 }
@@ -334,6 +336,7 @@ gsni_item_dbus_free(GsniItemDbus *self)
     g_return_if_fail(self != NULL);
 
     g_free(self->object_path);
+    g_free(self->menu_path);
     g_free(self);
 }
 
@@ -384,7 +387,7 @@ gsni_item_dbus_update_menu(GsniItemDbus *self, GMenuModel *menu,
     GError *error = NULL;
 
     /* Export com.canonical.dbusmenu (our adapter) */
-    self->dbusmenu = gsni_dbusmenu_new(self->connection, self->object_path,
+    self->dbusmenu = gsni_dbusmenu_new(self->connection, self->menu_path,
                                         menu, actions);
     gsni_dbusmenu_export(self->dbusmenu, &error);
     if (error) {
@@ -394,7 +397,7 @@ gsni_item_dbus_update_menu(GsniItemDbus *self, GMenuModel *menu,
 
     /* Export org.gtk.Menus (GIO native) */
     self->gio_menu_id = g_dbus_connection_export_menu_model(
-        self->connection, self->object_path, menu, &error);
+        self->connection, self->menu_path, menu, &error);
     if (error) {
         g_warning("Failed to export GIO menus: %s", error->message);
         g_clear_error(&error);
@@ -403,7 +406,7 @@ gsni_item_dbus_update_menu(GsniItemDbus *self, GMenuModel *menu,
     /* Export org.gtk.Actions (GIO native) */
     if (actions) {
         self->gio_action_id = g_dbus_connection_export_action_group(
-            self->connection, self->object_path, actions, &error);
+            self->connection, self->menu_path, actions, &error);
         if (error) {
             g_warning("Failed to export GIO actions: %s", error->message);
             g_clear_error(&error);
