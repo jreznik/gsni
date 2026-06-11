@@ -8,3 +8,7 @@ example_deps = [deps, declare_dependency(link_with: libgsni,
 example_simple = executable('simple-item', 'simple-item.c',
   dependencies: example_deps,
 )
+
+example_menu = executable('menu-item', 'menu-item.c',
+  dependencies: example_deps,
+)

@@ -169,10 +169,12 @@ dbusmenu_method_call(GDBusConnection       *connection,
             self, self->menu_model, (guint32)parent_id, depth,
             prop_names, n_props, TRUE);
 
-        GVariant *reply = g_variant_new("(u@(ia{sv}av))",
-            self->revision,
-            layout ? layout : g_variant_new("(ia{sv}av)", 0, NULL, NULL));
+        GVariant *def_layout = g_variant_new_parsed("(0, @a{sv} {}, @av [])");
+        if (layout == NULL)
+            layout = g_variant_ref_sink(def_layout);
 
+        GVariant *reply = g_variant_new("(u@(ia{sv}av))", self->revision,
+                                        layout);
         g_free(prop_names);
         g_dbus_method_invocation_return_value(invocation, reply);
 
@@ -327,7 +329,8 @@ collect_item_properties(GMenuModel *model, gint position,
         }
         g_object_unref(iter);
 
-        if (action_name && actions) {
+        if (action_name && actions &&
+            g_action_group_has_action(actions, action_name)) {
             enabled = g_action_group_get_action_enabled(actions,
                                                         action_name);
         }
@@ -398,6 +401,8 @@ build_layout_recursive(GsniDBusMenu *self, GMenuModel *model,
                        gboolean root_section)
 {
     gint n_items = g_menu_model_get_n_items(model);
+    GVariant *sub_children = NULL;
+    GVariant *result = NULL;
 
     /* Root node properties */
     GVariantBuilder root_dict;
@@ -420,113 +425,65 @@ build_layout_recursive(GsniDBusMenu *self, GMenuModel *model,
         gint child_recurse = (recurrence > 0) ? recurrence - 1 : -1;
 
         for (gint i = 0; i < n_items; i++) {
-            /* Check for section link — insert separator, then children */
             GMenuModel *section = g_menu_model_get_item_link(model, i,
                 G_MENU_LINK_SECTION);
 
-            if (section && parent_id == 0 && root_section) {
-                /* Insert separator between sections (not before first) */
-                if (i > 0) {
-                    GVariantBuilder sep_dict;
-                    g_variant_builder_init(&sep_dict,
-                                           G_VARIANT_TYPE("a{sv}"));
-                    if (property_requested("type", props, n_props))
-                        g_variant_builder_add(&sep_dict, "{sv}", "type",
-                            g_variant_new_variant(
-                                g_variant_new_string("separator")));
-
-                    GVariantBuilder sep_node;
-                    g_variant_builder_init(&sep_node,
-                        G_VARIANT_TYPE("(ia{sv}av)"));
-                    g_variant_builder_add(&sep_node, "i",
-                        encode_id(parent_id, i * 2 - 1));
-                    g_variant_builder_add_value(&sep_node,
-                        g_variant_builder_end(&sep_dict));
-                    g_variant_builder_add(&sep_node, "av", NULL);
-                    g_variant_builder_add_value(&children_arr,
-                        g_variant_new_variant(
-                            g_variant_builder_end(&sep_node)));
-                }
-
-                /* Recurse into section */
-                g_autoptr(GVariant) sec_layout =
-                    build_layout_recursive(self, section,
-                        encode_id(parent_id, i * 2),
-                        child_recurse, props, n_props, FALSE);
+            if (section) {
                 g_object_unref(section);
-                if (sec_layout)
-                    g_variant_builder_add_value(&children_arr,
-                        g_variant_new_variant(sec_layout));
-
+                /* skip sections for now — they're flattened */
                 continue;
             }
 
-            if (section) {
-                g_object_unref(section);
-            }
-
-            /* Check submenu link */
             GMenuModel *submenu = g_menu_model_get_item_link(model, i,
                 G_MENU_LINK_SUBMENU);
-
             guint32 child_id = encode_id(parent_id, i);
 
             GVariantBuilder item_dict;
             collect_item_properties(model, i, self->action_group,
                                     props, n_props, FALSE,
                                     submenu != NULL, &item_dict);
-            g_autoptr(GVariant) item_props =
-                g_variant_builder_end(&item_dict);
+            GVariant *item_props = g_variant_builder_end(&item_dict);
+            g_variant_ref_sink(item_props);
+
+            GVariantBuilder node;
+            g_variant_builder_init(&node, G_VARIANT_TYPE("(ia{sv}av)"));
+            g_variant_builder_add(&node, "i", child_id);
+            g_variant_builder_add_value(&node, item_props);
 
             if (submenu) {
-                g_autoptr(GVariant) sub_layout =
-                    build_layout_recursive(self, submenu, child_id,
-                        child_recurse, props, n_props, FALSE);
+                sub_children = build_layout_recursive(self, submenu,
+                    child_id, child_recurse, props, n_props, FALSE);
                 g_object_unref(submenu);
 
-                GVariantBuilder node;
-                g_variant_builder_init(&node,
-                                       G_VARIANT_TYPE("(ia{sv}av)"));
-                g_variant_builder_add(&node, "i", child_id);
-                g_variant_builder_add_value(&node, item_props);
-
-                if (sub_layout) {
-                    GVariant *sub_children =
-                        g_variant_get_child_value(sub_layout, 2);
-                    g_variant_builder_add_value(&node, sub_children);
+                if (sub_children) {
+                    GVariant *sc = g_variant_get_child_value(sub_children, 2);
+                    g_variant_builder_add_value(&node, sc);
+                    g_variant_unref(sc);
                     g_variant_unref(sub_children);
                 } else {
                     g_variant_builder_add(&node, "av", NULL);
                 }
-
-                g_variant_builder_add_value(&children_arr,
-                    g_variant_new_variant(
-                        g_variant_builder_end(&node)));
             } else {
-                GVariantBuilder node;
-                g_variant_builder_init(&node,
-                                       G_VARIANT_TYPE("(ia{sv}av)"));
-                g_variant_builder_add(&node, "i", child_id);
-                g_variant_builder_add_value(&node, item_props);
                 g_variant_builder_add(&node, "av", NULL);
-                g_variant_builder_add_value(&children_arr,
-                    g_variant_new_variant(
-                        g_variant_builder_end(&node)));
             }
+
+            GVariant *node_var = g_variant_builder_end(&node);
+            GVariant *wrapped = g_variant_new_variant(node_var);
+            g_variant_builder_add_value(&children_arr, wrapped);
         }
     }
 
-    g_autoptr(GVariant) children =
-        g_variant_builder_end(&children_arr);
+    GVariant *children = g_variant_builder_end(&children_arr);
 
     GVariantBuilder tuple;
     g_variant_builder_init(&tuple, G_VARIANT_TYPE("(ia{sv}av)"));
     g_variant_builder_add(&tuple, "i", parent_id);
-    g_variant_builder_add_value(&tuple,
-        g_variant_builder_end(&root_dict));
+    g_variant_builder_add_value(&tuple, g_variant_builder_end(&root_dict));
     g_variant_builder_add_value(&tuple, children);
 
-    return g_variant_builder_end(&tuple);
+    result = g_variant_builder_end(&tuple);
+
+    return result;
 }
 
 /* --- Idle coalescing callbacks --- */

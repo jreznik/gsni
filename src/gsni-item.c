@@ -444,6 +444,10 @@ gsni_item_register(GsniItem *self, GError **error)
             return FALSE;
     }
 
+    if (priv->menu)
+        gsni_item_dbus_update_menu(priv->dbus, priv->menu,
+                                   priv->action_group);
+
     if (priv->watcher == NULL) {
         priv->watcher = gsni_watcher_get_for_connection(priv->connection);
     }
