@@ -157,8 +157,10 @@ gsni_item_dbus_get_property(GDBusConnection *connection,
         return g_variant_new_string(ev ? ev->value_nick : "ApplicationStatus");
     }
 
-    if (g_str_equal(property, "Id"))
-        return g_variant_new_string("id");  /* FIXME: store in GsniItem */
+    if (g_str_equal(property, "Id")) {
+        const gchar *id_str = gsni_item_get_id(self->item);
+        return g_variant_new_string(id_str ? id_str : "");
+    }
 
     if (g_str_equal(property, "Title")) {
         const gchar *t = gsni_item_get_title(self->item);

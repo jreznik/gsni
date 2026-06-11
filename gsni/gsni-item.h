@@ -30,6 +30,8 @@ void           gsni_item_set_title         (GsniItem    *self,
                                             const gchar *title);
 const gchar   *gsni_item_get_title         (GsniItem    *self);
 
+const gchar   *gsni_item_get_id            (GsniItem    *self);
+
 void           gsni_item_set_category      (GsniItem    *self,
                                             GsniCategory category);
 GsniCategory   gsni_item_get_category      (GsniItem    *self);
