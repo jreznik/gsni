@@ -214,11 +214,16 @@ dbusmenu_method_call(GDBusConnection       *connection,
             g_variant_new("(ai)", &b));
 
     } else if (g_str_equal(method, "AboutToShow")) {
-        /* Always return FALSE — updates are async via LayoutUpdated */
+        /* Emit LayoutUpdated to trigger client menu rebuild (required
+         * by Plasma's DBusMenuImporter which needs this signal after
+         * AboutToShow to re-fetch the layout and emit contextMenuReady).
+         */
+        schedule_layout_update(self);
         g_dbus_method_invocation_return_value(invocation,
             g_variant_new("(b)", FALSE));
 
     } else if (g_str_equal(method, "AboutToShowGroup")) {
+        schedule_layout_update(self);
         GVariantBuilder up, err;
         g_variant_builder_init(&up, G_VARIANT_TYPE("ai"));
         g_variant_builder_init(&err, G_VARIANT_TYPE("ai"));
