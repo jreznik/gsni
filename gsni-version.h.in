@@ -1,0 +1,13 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later
+ * SPDX-FileCopyrightText: 2024 libgsni contributors
+ */
+
+#ifndef GSNI_VERSION_H
+#define GSNI_VERSION_H
+
+#define GSNI_MAJOR_VERSION (@GSNI_MAJOR_VERSION@)
+#define GSNI_MINOR_VERSION (@GSNI_MINOR_VERSION@)
+#define GSNI_MICRO_VERSION (@GSNI_MICRO_VERSION@)
+#define GSNI_VERSION        "@GSNI_VERSION@"
+
+#endif /* GSNI_VERSION_H */

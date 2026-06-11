@@ -1,0 +1,8 @@
+option('introspection', type: 'boolean', value: false,
+       description: 'Generate GObject Introspection data (for Python bindings)')
+option('tests', type: 'boolean', value: true,
+       description: 'Build unit tests')
+option('examples', type: 'boolean', value: true,
+       description: 'Build example programs')
+option('docs', type: 'boolean', value: false,
+       description: 'Build documentation (requires gi-docgen)')
