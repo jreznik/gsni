@@ -454,6 +454,7 @@ build_layout_recursive(GsniDBusMenu *self, GMenuModel *model,
             g_variant_builder_init(&node, G_VARIANT_TYPE("(ia{sv}av)"));
             g_variant_builder_add(&node, "i", child_id);
             g_variant_builder_add_value(&node, item_props);
+            g_variant_unref(item_props);
 
             if (submenu) {
                 sub_children = build_layout_recursive(self, submenu,
@@ -462,31 +463,43 @@ build_layout_recursive(GsniDBusMenu *self, GMenuModel *model,
 
                 if (sub_children) {
                     GVariant *sc = g_variant_get_child_value(sub_children, 2);
+                    g_variant_ref_sink(sc);
                     g_variant_builder_add_value(&node, sc);
                     g_variant_unref(sc);
                     g_variant_unref(sub_children);
                 } else {
                     g_variant_builder_add(&node, "av", NULL);
                 }
+                sub_children = NULL;
             } else {
                 g_variant_builder_add(&node, "av", NULL);
             }
 
             GVariant *node_var = g_variant_builder_end(&node);
+            g_variant_ref_sink(node_var);
             GVariant *wrapped = g_variant_new_variant(node_var);
             g_variant_builder_add_value(&children_arr, wrapped);
+            g_variant_unref(node_var);
         }
     }
 
     GVariant *children = g_variant_builder_end(&children_arr);
+    g_variant_ref_sink(children);
 
     GVariantBuilder tuple;
     g_variant_builder_init(&tuple, G_VARIANT_TYPE("(ia{sv}av)"));
     g_variant_builder_add(&tuple, "i", parent_id);
-    g_variant_builder_add_value(&tuple, g_variant_builder_end(&root_dict));
+    {
+        GVariant *root = g_variant_builder_end(&root_dict);
+        g_variant_ref_sink(root);
+        g_variant_builder_add_value(&tuple, root);
+        g_variant_unref(root);
+    }
     g_variant_builder_add_value(&tuple, children);
 
     result = g_variant_builder_end(&tuple);
+    g_variant_unref(children);
+    g_variant_ref_sink(result);
 
     return result;
 }
