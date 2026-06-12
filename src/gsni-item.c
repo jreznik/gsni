@@ -527,6 +527,12 @@ gsni_item_unregister(GsniItem *self)
     g_object_notify(G_OBJECT(self), "connected");
 }
 
+/**
+ * gsni_item_get_connected:
+ * @self: a #GsniItem
+ *
+ * Returns: %TRUE if the item is registered on D-Bus
+ */
 gboolean
 gsni_item_get_connected(GsniItem *self)
 {
@@ -554,6 +560,12 @@ gsni_item_set_title(GsniItem *self, const gchar *title)
         gsni_item_dbus_emit_signal(priv->dbus, "NewTitle", NULL);
 }
 
+/**
+ * gsni_item_get_title:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none) (nullable): the title or %NULL
+ */
 const gchar *
 gsni_item_get_title(GsniItem *self)
 {
@@ -573,6 +585,12 @@ gsni_item_set_category(GsniItem *self, GsniCategory category)
     g_object_notify(G_OBJECT(self), "category");
 }
 
+/**
+ * gsni_item_get_category:
+ * @self: a #GsniItem
+ *
+ * Returns: the category
+ */
 GsniCategory
 gsni_item_get_category(GsniItem *self)
 {
@@ -603,6 +621,12 @@ gsni_item_set_status(GsniItem *self, GsniStatus status)
     }
 }
 
+/**
+ * gsni_item_get_status:
+ * @self: a #GsniItem
+ *
+ * Returns: the status
+ */
 GsniStatus
 gsni_item_get_status(GsniItem *self)
 {
@@ -630,6 +654,12 @@ gsni_item_set_icon_name(GsniItem *self, const gchar *name)
         gsni_item_dbus_emit_signal(priv->dbus, "NewIcon", NULL);
 }
 
+/**
+ * gsni_item_get_icon_name:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none) (nullable): the icon name or %NULL
+ */
 const gchar *
 gsni_item_get_icon_name(GsniItem *self)
 {
@@ -690,6 +720,12 @@ gsni_item_set_overlay_icon_name(GsniItem *self, const gchar *name)
         gsni_item_dbus_emit_signal(priv->dbus, "NewOverlayIcon", NULL);
 }
 
+/**
+ * gsni_item_get_overlay_icon_name:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none) (nullable): the overlay icon name or %NULL
+ */
 const gchar *
 gsni_item_get_overlay_icon_name(GsniItem *self)
 {
@@ -717,6 +753,12 @@ gsni_item_set_attention_icon_name(GsniItem *self, const gchar *name)
         gsni_item_dbus_emit_signal(priv->dbus, "NewAttentionIcon", NULL);
 }
 
+/**
+ * gsni_item_get_attention_icon_name:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none) (nullable): the attention icon name or %NULL
+ */
 const gchar *
 gsni_item_get_attention_icon_name(GsniItem *self)
 {
@@ -744,6 +786,12 @@ gsni_item_set_attention_movie_name(GsniItem *self, const gchar *name)
         gsni_item_dbus_emit_signal(priv->dbus, "NewAttentionIcon", NULL);
 }
 
+/**
+ * gsni_item_get_attention_movie_name:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none) (nullable): the attention movie name or %NULL
+ */
 const gchar *
 gsni_item_get_attention_movie_name(GsniItem *self)
 {
@@ -767,6 +815,12 @@ gsni_item_set_item_is_menu(GsniItem *self, gboolean is_menu)
     g_object_notify(G_OBJECT(self), "item-is-menu");
 }
 
+/**
+ * gsni_item_get_item_is_menu:
+ * @self: a #GsniItem
+ *
+ * Returns: %TRUE if the item acts as a DBusMenu provider
+ */
 gboolean
 gsni_item_get_item_is_menu(GsniItem *self)
 {
@@ -795,6 +849,12 @@ gsni_item_set_icon_theme_path(GsniItem *self, const gchar *path)
                                    g_variant_new("(s)", path ? path : ""));
 }
 
+/**
+ * gsni_item_get_icon_theme_path:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none) (nullable): the icon theme path or %NULL
+ */
 const gchar *
 gsni_item_get_icon_theme_path(GsniItem *self)
 {
@@ -896,6 +956,12 @@ gsni_item_set_tooltip(GsniItem *self, const gchar *icon_name,
         gsni_item_dbus_emit_signal(priv->dbus, "NewToolTip", NULL);
 }
 
+/**
+ * gsni_item_get_tooltip:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none): the tooltip
+ */
 GsniToolTip *
 gsni_item_get_tooltip(GsniItem *self)
 {
@@ -915,6 +981,12 @@ gsni_item_set_window_id(GsniItem *self, gint window_id)
     g_object_notify(G_OBJECT(self), "window-id");
 }
 
+/**
+ * gsni_item_get_window_id:
+ * @self: a #GsniItem
+ *
+ * Returns: the X11 window ID
+ */
 gint
 gsni_item_get_window_id(GsniItem *self)
 {
@@ -922,6 +994,16 @@ gsni_item_get_window_id(GsniItem *self)
     return PRIV(self)->window_id;
 }
 
+/**
+ * gsni_item_show_notification:
+ * @self: a #GsniItem
+ * @title: (nullable): notification title
+ * @body: (nullable): notification body
+ * @icon_name: (nullable): icon name
+ * @timeout_ms: notification timeout in milliseconds
+ *
+ * Shows a desktop notification via org.freedesktop.Notifications.
+ */
 void
 gsni_item_show_notification(GsniItem *self, const gchar *title,
                             const gchar *body, const gchar *icon_name,
@@ -974,6 +1056,12 @@ gsni_item_show_notification(GsniItem *self, const gchar *title,
     }
 }
 
+/**
+ * gsni_item_get_activation_token:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none): the activation token
+ */
 const gchar *
 gsni_item_get_activation_token(GsniItem *self)
 {
@@ -1003,6 +1091,12 @@ gsni_item_get_object_path(GsniItem *self)
     return PRIV(self)->object_path;
 }
 
+/**
+ * gsni_item_get_id:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none): the unique item ID
+ */
 const gchar *
 gsni_item_get_id(GsniItem *self)
 {
@@ -1010,6 +1104,12 @@ gsni_item_get_id(GsniItem *self)
     return PRIV(self)->id;
 }
 
+/**
+ * gsni_item_get_bus_name:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none): the D-Bus well-known bus name
+ */
 const gchar *
 gsni_item_get_bus_name(GsniItem *self)
 {

@@ -286,30 +286,60 @@ gsni_host_item_new(const gchar *service, GDBusConnection *connection)
 }
 
 
+/**
+ * gsni_host_item_get_id:
+ * @self: a #GsniHostItem
+ *
+ * Returns: (transfer none) (nullable): the item ID or %NULL
+ */
 const gchar *
 gsni_host_item_get_id(GsniHostItem *self)
 {
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), NULL);
     return self->id;
 }
+/**
+ * gsni_host_item_get_title:
+ * @self: a #GsniHostItem
+ *
+ * Returns: (transfer none) (nullable): the title or %NULL
+ */
 const gchar *
 gsni_host_item_get_title(GsniHostItem *self)
 {
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), NULL);
     return self->title;
 }
+/**
+ * gsni_host_item_get_status:
+ * @self: a #GsniHostItem
+ *
+ * Returns: the status
+ */
 GsniStatus
 gsni_host_item_get_status(GsniHostItem *self)
 {
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), GSNI_STATUS_PASSIVE);
     return self->status;
 }
+/**
+ * gsni_host_item_get_category:
+ * @self: a #GsniHostItem
+ *
+ * Returns: the category
+ */
 GsniCategory
 gsni_host_item_get_category(GsniHostItem *self)
 {
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), GSNI_CATEGORY_APPLICATION_STATUS);
     return self->category;
 }
+/**
+ * gsni_host_item_get_icon_name:
+ * @self: a #GsniHostItem
+ *
+ * Returns: (transfer none) (nullable): the icon name or %NULL
+ */
 const gchar *
 gsni_host_item_get_icon_name(GsniHostItem *self)
 {
@@ -328,36 +358,72 @@ gsni_host_item_get_icon_pixbuf(GsniHostItem *self)
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), NULL);
     return self->icon_pixbuf;
 }
+/**
+ * gsni_host_item_get_menu_path:
+ * @self: a #GsniHostItem
+ *
+ * Returns: (transfer none) (nullable): the DBusMenu object path or %NULL
+ */
 const gchar *
 gsni_host_item_get_menu_path(GsniHostItem *self)
 {
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), NULL);
     return self->menu_path;
 }
+/**
+ * gsni_host_item_get_overlay_icon_name:
+ * @self: a #GsniHostItem
+ *
+ * Returns: (transfer none) (nullable): the overlay icon name or %NULL
+ */
 const gchar *
 gsni_host_item_get_overlay_icon_name(GsniHostItem *self)
 {
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), NULL);
     return self->overlay_icon_name;
 }
+/**
+ * gsni_host_item_get_attention_icon_name:
+ * @self: a #GsniHostItem
+ *
+ * Returns: (transfer none) (nullable): the attention icon name or %NULL
+ */
 const gchar *
 gsni_host_item_get_attention_icon_name(GsniHostItem *self)
 {
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), NULL);
     return self->attention_icon_name;
 }
+/**
+ * gsni_host_item_get_item_is_menu:
+ * @self: a #GsniHostItem
+ *
+ * Returns: %TRUE if the item acts as a DBusMenu provider
+ */
 gboolean
 gsni_host_item_get_item_is_menu(GsniHostItem *self)
 {
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), FALSE);
     return self->item_is_menu;
 }
+/**
+ * gsni_host_item_get_service:
+ * @self: a #GsniHostItem
+ *
+ * Returns: (transfer none): the D-Bus service name
+ */
 const gchar *
 gsni_host_item_get_service(GsniHostItem *self)
 {
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), NULL);
     return self->service;
 }
+/**
+ * gsni_host_item_get_window_id:
+ * @self: a #GsniHostItem
+ *
+ * Returns: the X11 window ID
+ */
 gint
 gsni_host_item_get_window_id(GsniHostItem *self)
 {

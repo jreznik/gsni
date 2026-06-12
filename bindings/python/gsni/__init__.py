@@ -144,7 +144,7 @@ class StatusNotifierItem:
     # ── tooltip ─────────────────────────────────────────────
 
     def set_tooltip(self, icon_name, title, subtitle):
-        self._item.set_tooltip(icon_name or "", title or "", subtitle or "")
+        self._item.set_tooltip(icon_name, title or "", subtitle or "")
 
     # ── menu + actions ──────────────────────────────────────
 
@@ -197,6 +197,7 @@ class StatusNotifierItem:
     # ── lifecycle ───────────────────────────────────────────
 
     def register(self):
+        """Register the item on D-Bus. Returns True on success."""
         return self._item.register()
 
     def unregister(self):
@@ -215,9 +216,17 @@ class StatusNotifierItem:
         """Shorthand for ``connect('activate', callback)``."""
         return self._item.connect("activate", callback)
 
+    def on_secondary_activate(self, callback):
+        """Shorthand for ``connect('secondary-activate', callback)``."""
+        return self._item.connect("secondary-activate", callback)
+
     def on_scroll(self, callback):
         """Shorthand for ``connect('scroll', callback)``."""
         return self._item.connect("scroll", callback)
+
+    def on_quit_requested(self, callback):
+        """Shorthand for ``connect('quit-requested', callback)``."""
+        return self._item.connect("quit-requested", callback)
 
     # ── context manager ─────────────────────────────────────
 
@@ -227,3 +236,103 @@ class StatusNotifierItem:
 
     def __exit__(self, *args):
         self.unregister()
+
+
+class StatusNotifierHost:
+    """A host that consumes StatusNotifierItem tray icons.
+
+    Wraps :class:`Gsni.Host` with Pythonic property access and
+    iteration over items.
+    """
+
+    def __init__(self, connection=None):
+        if connection is None:
+            connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        self._host = Gsni.Host.new(connection)
+
+    def register(self):
+        return self._host.register()
+
+    def unregister(self):
+        self._host.unregister()
+
+    @property
+    def items(self):
+        """List of :class:`StatusNotifierHostItem` currently tracked."""
+        model = self._host.get_items()
+        result = []
+        for i in range(model.get_n_items()):
+            result.append(StatusNotifierHostItem(model.get_item(i)))
+        return result
+
+    def connect(self, signal, callback):
+        return self._host.connect(signal, callback)
+
+    def on_item_added(self, callback):
+        """Shorthand for ``connect('item-added', callback)``."""
+        return self._host.connect("item-added", callback)
+
+    def on_item_removed(self, callback):
+        """Shorthand for ``connect('item-removed', callback)``."""
+        return self._host.connect("item-removed", callback)
+
+    def __iter__(self):
+        return iter(self.items)
+
+
+class StatusNotifierHostItem:
+    """A remote StatusNotifierItem discovered by the host.
+
+    Wraps :class:`Gsni.HostItem`.
+    """
+
+    def __init__(self, host_item=None):
+        self._item = host_item
+
+    @property
+    def id(self):
+        return self._item.get_id()
+
+    @property
+    def title(self):
+        return self._item.get_title()
+
+    @property
+    def status(self):
+        return self._item.get_status()
+
+    @property
+    def category(self):
+        return self._item.get_category()
+
+    @property
+    def icon_name(self):
+        return self._item.get_icon_name()
+
+    @property
+    def icon_pixbuf(self):
+        return self._item.get_icon_pixbuf()
+
+    @property
+    def menu_path(self):
+        return self._item.get_menu_path()
+
+    @property
+    def overlay_icon_name(self):
+        return self._item.get_overlay_icon_name()
+
+    @property
+    def attention_icon_name(self):
+        return self._item.get_attention_icon_name()
+
+    @property
+    def item_is_menu(self):
+        return self._item.get_item_is_menu()
+
+    @property
+    def service(self):
+        return self._item.get_service()
+
+    @property
+    def window_id(self):
+        return self._item.get_window_id()
