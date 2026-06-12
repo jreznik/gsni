@@ -16,7 +16,6 @@ struct _GsniHost {
     GDBusConnection *connection;
     GDBusProxy      *watcher_proxy;
     GListStore      *items;          /* GsniHostItem */
-    guint            signal_sub_id;
 };
 
 G_DEFINE_FINAL_TYPE(GsniHost, gsni_host, G_TYPE_OBJECT)
@@ -62,24 +61,15 @@ gboolean
 gsni_host_register(GsniHost *self, GError **error)
 {
     g_return_val_if_fail(GSNI_IS_HOST(self), FALSE);
-
-    /* TODO: register as a StatusNotifierHost with the watcher,
-     * subscribe to StatusNotifierItemRegistered/unregistered signals,
-     * and create GsniHostItem proxies */
-
-    return TRUE;
+    g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                        "GsniHost is not yet implemented");
+    return FALSE;
 }
 
 void
 gsni_host_unregister(GsniHost *self)
 {
     g_return_if_fail(GSNI_IS_HOST(self));
-
-    if (self->signal_sub_id) {
-        g_dbus_connection_signal_unsubscribe(self->connection,
-                                              self->signal_sub_id);
-        self->signal_sub_id = 0;
-    }
 }
 
 GListModel *

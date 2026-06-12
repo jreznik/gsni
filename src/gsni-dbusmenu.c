@@ -33,14 +33,6 @@ encode_id(guint32 parent, guint pos)
     return (parent << 10) | ((pos + 1) & 0x3FF);
 }
 
-static inline guint32
-decode_parent(guint32 id)
-{
-    if (id <= 1)
-        return 0;
-    return id >> 10;
-}
-
 static inline guint
 decode_position(guint32 id)
 {
@@ -118,15 +110,9 @@ struct _GsniDBusMenu {
     guint32          revision;
 
     gulong           menu_changed_id;
-    gulong           action_state_id;
-    gulong           action_enabled_id;
 
     /* Idle coalescing */
-    guint            layout_idle_id;
-    guint            props_idle_id;
-
-    /* Pending property changes for ItemsPropertiesUpdated coalescing */
-    GHashTable      *pending_updates;  /* GINT_TO_POINTER(id) → GHashTable */
+    guint            layout_idle_id;   /* 0 = not scheduled */
 };
 
 /* Forward declarations */
@@ -556,23 +542,6 @@ on_menu_items_changed(GMenuModel *model, gint position,
     schedule_layout_update(user_data);
 }
 
-static void
-on_action_state_changed(GActionGroup *group, const gchar *name,
-                        GVariant *state, gpointer user_data)
-{
-    /* Booleans affect toggle-state — schedule property update */
-    if (g_variant_is_of_type(state, G_VARIANT_TYPE_BOOLEAN)) {
-        /* TODO: find item IDs that reference this action and queue */
-    }
-}
-
-static void
-on_action_enabled_changed(GActionGroup *group, const gchar *name,
-                          gboolean enabled, gpointer user_data)
-{
-    /* TODO: find item IDs and queue "enabled" property update */
-}
-
 /* --- Public API --- */
 
 static void
@@ -642,16 +611,6 @@ gsni_dbusmenu_export(GsniDBusMenu *self, GError **error)
         self->menu_model, "items-changed",
         G_CALLBACK(on_menu_items_changed), self);
 
-    /* Watch for action state changes */
-    if (self->action_group) {
-        self->action_state_id = g_signal_connect(
-            self->action_group, "action-state-changed",
-            G_CALLBACK(on_action_state_changed), self);
-        self->action_enabled_id = g_signal_connect(
-            self->action_group, "action-enabled-changed",
-            G_CALLBACK(on_action_enabled_changed), self);
-    }
-
     return TRUE;
 }
 
@@ -669,18 +628,6 @@ gsni_dbusmenu_unexport(GsniDBusMenu *self)
         g_signal_handler_disconnect(self->menu_model,
                                     self->menu_changed_id);
         self->menu_changed_id = 0;
-    }
-
-    if (self->action_state_id) {
-        g_signal_handler_disconnect(self->action_group,
-                                    self->action_state_id);
-        self->action_state_id = 0;
-    }
-
-    if (self->action_enabled_id) {
-        g_signal_handler_disconnect(self->action_group,
-                                    self->action_enabled_id);
-        self->action_enabled_id = 0;
     }
 
     if (self->reg_id) {
