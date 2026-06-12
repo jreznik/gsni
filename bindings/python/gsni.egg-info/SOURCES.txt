@@ -1,0 +1,11 @@
+MANIFEST.in
+README.md
+pyproject.toml
+examples/simple_tray.py
+gsni/__init__.py
+gsni.egg-info/PKG-INFO
+gsni.egg-info/SOURCES.txt
+gsni.egg-info/dependency_links.txt
+gsni.egg-info/requires.txt
+gsni.egg-info/top_level.txt
+tests/test_gsni.py
