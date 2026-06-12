@@ -45,13 +45,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install RPM build tools
+      - name: Install build tools
+        run: dnf install -y rpm-build git xz
+
+      - name: Install build dependencies from spec
         run: |
-          dnf install -y \
-            rpm-build rpmdevtools meson gcc \
-            glib2-devel gdk-pixbuf2-devel \
-            gobject-introspection-devel \
-            python3-devel git xz
+          dnf install -y dnf-plugins-core
+          dnf builddep -y packaging/libgsni.spec
 
       - name: Create source tarball
         run: |
