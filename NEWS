@@ -1,3 +1,11 @@
+1.0.1 (2026-06-12)
+------------------
+
+- Python bindings documentation and examples
+- PyPI compliance: SPDX license expression, license-files, project URLs
+- Fix GIR transfer annotations on getter functions
+- Version bump for PyPI upload
+
 1.0.0 (2026-06-12)
 ------------------
 

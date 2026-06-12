@@ -12,6 +12,7 @@ gsni_toml = configure_file(
 
 content_files = files(
   'getting-started.md',
+  'python.md',
 )
 
 gir_target = []

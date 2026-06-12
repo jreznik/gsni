@@ -1,5 +1,5 @@
 Name:           libgsni
-Version:        1.0.0
+Version:        1.0.1
 Release:        1%{?dist}
 Summary:        StatusNotifierItem D-Bus tray icon library for GTK4
 
@@ -100,5 +100,9 @@ ninja -C build test || true
 %{python3_sitelib}/gsni/
 
 %changelog
+* Fri Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.1-1
+- Python bindings documentation and examples
+- PyPI compliance updates
+
 * Fri Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.0-1
 - Initial release

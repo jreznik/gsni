@@ -1,5 +1,5 @@
 project('gsni', 'c',
-  version: '1.0.0',
+  version: '1.0.1',
   license: 'LGPL-2.1-or-later',
   meson_version: '>= 1.0',
   default_options: [
@@ -12,7 +12,7 @@ project('gsni', 'c',
 version_array = meson.project_version().split('.')
 api_version = version_array[0]
 gi_version = '@0@.0'.format(version_array[0])
-so_version = '1.0.0'
+so_version = '1.0.1'
 
 gsni_build_inc = include_directories('.')
 
