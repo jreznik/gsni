@@ -35,16 +35,16 @@ jobs:
           GI_TYPELIB_PATH=build/src LD_LIBRARY_PATH=build/src \
             python3 -m pytest bindings/python/tests/ -v
 
-      - name: Build Python wheel
+      - name: Build Python distributions
         run: |
           python3 -m pip install build meson-python
-          python3 -m build --wheel
+          python3 -m build
 
-      - name: Upload wheel artifact
+      - name: Upload distributions artifact
         uses: actions/upload-artifact@v4
         with:
-          name: python-wheel
-          path: dist/*.whl
+          name: gsni-1.0.0
+          path: dist/*
 
   rpm:
     runs-on: ubuntu-latest
