@@ -9,28 +9,28 @@ Source0:        https://github.com/jreznik/gsni/releases/download/v%{version}/gs
 
 BuildRequires:  meson >= 1.0
 BuildRequires:  gcc
-BuildRequires:  glib2-devel >= 2.80
-BuildRequires:  gdk-pixbuf2-devel >= 2.42
-BuildRequires:  gobject-introspection-devel >= 1.78
+BuildRequires:  pkgconfig(glib-2.0) >= 2.80
+BuildRequires:  pkgconfig(gdk-pixbuf-2.0) >= 2.42
+BuildRequires:  pkgconfig(gobject-introspection-1.0) >= 1.78
 
 %description
 libgsni implements the StatusNotifierItem (SNI) D-Bus protocol
 for GTK4 applications.  It provides GsniItem for creating tray
 icons with menus, tooltips, and scroll events, and GsniHost for
 consuming SNI items in custom system trays.
-Written by Jaroslav Reznik <jreznik@redhat.com>.
 
 %package        -n %{name}1
 Summary:        Runtime library for %{name}
 Requires:       glib2%{?_isa} >= 2.80
 
 %description    -n %{name}1
-Runtime shared library for the libgsni StatusNotifierItem implementation.
+Runtime shared library for the libgsni StatusNotifierItem
+implementation.
 
 %package        -n %{name}-devel
 Summary:        Development files for %{name}
 Requires:       %{name}1%{?_isa} = %{version}-%{release}
-Requires:       glib2-devel%{?_isa} >= 2.80
+Requires:       pkgconfig(glib-2.0) >= 2.80
 
 %description    -n %{name}-devel
 Headers and pkg-config file for developing applications using libgsni.
@@ -38,13 +38,14 @@ Headers and pkg-config file for developing applications using libgsni.
 %package        -n gir1.2-gsni-1.0
 Summary:        GObject Introspection data for %{name}
 Requires:       %{name}1%{?_isa} = %{version}-%{release}
+BuildArch:      noarch
 
 %description    -n gir1.2-gsni-1.0
 GObject Introspection typelib for using libgsni from Python and other
 language bindings.
 
 %prep
-%autosetup -n gsni-%{version}
+%autosetup -n gsni-%{version} -p1
 
 %build
 %meson
@@ -70,5 +71,5 @@ language bindings.
 %{_libdir}/girepository-1.0/Gsni-1.0.typelib
 
 %changelog
-* Thu Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.0-1
+* Fri Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.0-1
 - Initial release
