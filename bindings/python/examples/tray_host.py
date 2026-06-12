@@ -72,13 +72,15 @@ def populate_popover(box, layout_node, bus_name, menu_path, popover,
     label_str = None
     enabled = True
 
-    for key, val in props:
-        if key == "type":
-            type_str = val.get_string()
-        elif key == "label":
-            label_str = val.dup_string()
-        elif key == "enabled":
-            enabled = val.get_boolean()
+    type_val = props.lookup_value("type", None)
+    if type_val:
+        type_str = type_val.get_string()
+    label_val = props.lookup_value("label", None)
+    if label_val:
+        label_str = label_val.dup_string()
+    enabled_val = props.lookup_value("enabled", None)
+    if enabled_val:
+        enabled = enabled_val.get_boolean()
 
     n_children = children.n_children()
 
