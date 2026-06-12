@@ -5,7 +5,7 @@ Summary:        StatusNotifierItem D-Bus tray icon library for GTK4
 
 License:        LGPL-2.1-or-later
 URL:            https://github.com/jreznik/gsni
-Source0:        https://github.com/jreznik/gsni/releases/download/v%{version}/gsni-%{version}.tar.xz
+Source0:        https://github.com/jreznik/gsni/releases/download/v%{version}/gsni-%{version}.tar.gz
 
 BuildRequires:  meson >= 1.0
 BuildRequires:  gcc
