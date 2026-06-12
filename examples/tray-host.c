@@ -3,8 +3,7 @@
  *
  * GTK4 system tray host example.
  *
- * Discovers SNI items via GsniHost and displays them in a window.
- * Click an icon to activate the associated application.
+ * Left-click activates the item. Right-click shows its DBusMenu context menu.
  */
 
 #include <gtk/gtk.h>
@@ -16,11 +15,245 @@ typedef struct {
     GtkWindow     *window;
     GtkBox        *tray_box;
     GsniHost      *host;
-    GHashTable    *item_widgets;  /* GsniHostItem * -> GtkWidget * */
+    GHashTable    *item_widgets;
 } AppData;
 
 static void add_tray_icon(AppData *app, GsniHostItem *item);
 static void remove_tray_icon(AppData *app, GsniHostItem *item);
+static void load_existing_items(AppData *app);
+
+/* ── DBusMenu helpers ──────────────────────────────────────── */
+
+static GVariant *
+fetch_menu_layout(const gchar *bus_name, const gchar *menu_path)
+{
+    GDBusConnection *conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+    if (!conn) return NULL;
+
+    GVariantBuilder filter;
+    g_variant_builder_init(&filter, G_VARIANT_TYPE_STRING_ARRAY);
+    const gchar *props[] = {"type","label","enabled","children-display",
+                            "toggle-type","toggle-state", NULL};
+    for (const gchar **p = props; *p; p++)
+        g_variant_builder_add(&filter, "s", *p);
+
+    GError *err = NULL;
+    GVariant *result = g_dbus_connection_call_sync(
+        conn, bus_name, menu_path, "com.canonical.dbusmenu", "GetLayout",
+        g_variant_new("(ii@as)", 0, -1, g_variant_builder_end(&filter)),
+        NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
+    if (!result) { g_clear_error(&err); }
+    g_object_unref(conn);
+    return result;
+}
+
+static void
+trigger_menu_event(const gchar *bus_name, const gchar *menu_path, gint id)
+{
+    GDBusConnection *conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+    if (!conn) return;
+    g_dbus_connection_call_sync(conn, bus_name, menu_path,
+        "com.canonical.dbusmenu", "Event",
+        g_variant_new("(i&s@vu)", id, "clicked",
+                      g_variant_new_string(""), 0U),
+        NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL);
+    g_object_unref(conn);
+}
+
+/* ── Custom popover menu built from DBusMenu layout ────────── */
+
+typedef struct {
+    const gchar *bus_name;
+    const gchar *menu_path;
+    gint         item_id;
+} MenuCallbackData;
+
+static void
+on_popover_item_clicked(GtkGestureClick *gesture, gint np, gdouble x, gdouble y,
+                        gpointer data)
+{
+    MenuCallbackData *mcd = data;
+    trigger_menu_event(mcd->bus_name, mcd->menu_path, mcd->item_id);
+
+    GtkWidget *popover = GTK_WIDGET(
+        g_object_get_data(G_OBJECT(gesture), "popover"));
+    if (popover)
+        gtk_popover_popdown(GTK_POPOVER(popover));
+}
+
+static void
+add_menu_item_to_box(GtkBox *box, const gchar *label, gboolean enabled,
+                     const gchar *bus_name, const gchar *menu_path,
+                     gint item_id, GtkWidget *popover)
+{
+    GtkWidget *btn = gtk_button_new_with_label(label ? label : "");
+    gtk_widget_set_sensitive(btn, enabled);
+    gtk_widget_set_halign(btn, GTK_ALIGN_FILL);
+    gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
+
+    MenuCallbackData *mcd = g_new(MenuCallbackData, 1);
+    mcd->bus_name = bus_name;
+    mcd->menu_path = menu_path;
+    mcd->item_id = item_id;
+
+    GtkGesture *click = gtk_gesture_click_new();
+    g_object_set_data(G_OBJECT(click), "popover", popover);
+    g_signal_connect_data(click, "pressed",
+                          G_CALLBACK(on_popover_item_clicked), mcd,
+                          (GClosureNotify)g_free, 0);
+    gtk_widget_add_controller(btn, GTK_EVENT_CONTROLLER(click));
+
+    gtk_box_append(box, btn);
+}
+
+static void
+populate_popover_from_layout(GtkBox *box, GVariant *layout_node,
+                             const gchar *bus_name, const gchar *menu_path,
+                             GtkWidget *popover, gboolean is_root)
+{
+    gint32 id;
+    g_autoptr(GVariant) props = g_variant_get_child_value(layout_node, 1);
+    g_autoptr(GVariant) children = g_variant_get_child_value(layout_node, 2);
+    id = g_variant_get_int32(g_variant_get_child_value(layout_node, 0));
+
+    const gchar *type_str = "standard";
+    gchar *label_str = NULL;
+    gboolean enabled = TRUE;
+
+    {
+        GVariantIter iter;
+        const gchar *key;
+        GVariant *val;
+        g_variant_iter_init(&iter, props);
+        while (g_variant_iter_next(&iter, "{&sv}", &key, &val)) {
+            if (g_str_equal(key, "type"))
+                type_str = g_variant_get_string(val, NULL);
+            else if (g_str_equal(key, "label"))
+                label_str = g_variant_dup_string(val, NULL);
+            else if (g_str_equal(key, "enabled"))
+                enabled = g_variant_get_boolean(val);
+            g_variant_unref(val);
+        }
+    }
+
+    guint n_children = g_variant_n_children(children);
+
+    if (is_root) {
+        for (guint i = 0; i < n_children; i++) {
+            g_autoptr(GVariant) child = g_variant_get_child_value(children, i);
+            /* Children in av array are wrapped in v — unwrap */
+            g_autoptr(GVariant) unwrapped = g_variant_get_variant(child);
+            populate_popover_from_layout(box, unwrapped, bus_name, menu_path,
+                                         popover, FALSE);
+        }
+        g_free(label_str);
+        return;
+    }
+
+    if (g_str_equal(type_str, "separator")) {
+        GtkWidget *sep = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_box_append(box, sep);
+        g_free(label_str);
+        return;
+    }
+
+    if (n_children > 0) {
+        GtkWidget *sub_label = gtk_label_new(label_str ? label_str : "");
+        gtk_widget_set_halign(sub_label, GTK_ALIGN_START);
+        gtk_widget_set_margin_start(sub_label, 8);
+        gtk_box_append(box, sub_label);
+
+        for (guint i = 0; i < n_children; i++) {
+            g_autoptr(GVariant) child = g_variant_get_child_value(children, i);
+            g_autoptr(GVariant) unwrapped = g_variant_get_variant(child);
+            populate_popover_from_layout(box, unwrapped, bus_name, menu_path,
+                                         popover, FALSE);
+        }
+
+        GtkWidget *sep2 = gtk_separator_new(GTK_ORIENTATION_HORIZONTAL);
+        gtk_box_append(box, sep2);
+    } else {
+        add_menu_item_to_box(box, label_str, enabled, bus_name, menu_path,
+                             id, popover);
+    }
+    g_free(label_str);
+}
+
+static void
+show_context_menu(GsniHostItem *item, GtkWidget *row, gdouble x, gdouble y)
+{
+    const gchar *service = gsni_host_item_get_service(item);
+    gchar *bus_name = g_strdup(service);
+    gchar *slash = strchr(bus_name, '/');
+    if (slash) *slash = '\0';
+
+    const gchar *menu_path = gsni_host_item_get_menu_path(item);
+    if (!menu_path || !menu_path[0]) { g_free(bus_name); return; }
+
+    GVariant *reply = fetch_menu_layout(bus_name, menu_path);
+    if (!reply) { g_free(bus_name); return; }
+
+    g_autoptr(GVariant) layout = g_variant_get_child_value(reply, 1);
+    g_variant_unref(reply);
+
+    GtkWidget *popover = gtk_popover_new();
+    gtk_popover_set_pointing_to(GTK_POPOVER(popover),
+        &(GdkRectangle){ (gint)x, (gint)y, 1, 1 });
+    gtk_popover_set_has_arrow(GTK_POPOVER(popover), FALSE);
+
+    GtkWidget *box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    gtk_popover_set_child(GTK_POPOVER(popover), box);
+
+    populate_popover_from_layout(GTK_BOX(box), layout, bus_name, menu_path,
+                                 popover, TRUE);
+
+    gtk_widget_set_parent(popover, row);
+    gtk_popover_popup(GTK_POPOVER(popover));
+    g_free(bus_name);
+}
+
+/* ── Click handlers ────────────────────────────────────────── */
+
+static void
+activate_item(GsniHostItem *item, gdouble x, gdouble y)
+{
+    GDBusConnection *conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+    if (!conn) return;
+
+    const gchar *service = gsni_host_item_get_service(item);
+    gchar *bus_name = g_strdup(service);
+    gchar *slash = strchr(bus_name, '/');
+    if (slash) *slash = '\0';
+
+    GError *err = NULL;
+    GVariant *result = g_dbus_connection_call_sync(
+        conn, bus_name, "/StatusNotifierItem",
+        "org.kde.StatusNotifierItem", "Activate",
+        g_variant_new("(ii)", (gint)x, (gint)y),
+        NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
+    if (result) g_variant_unref(result);
+    else { g_warning("Activate failed: %s", err->message); g_clear_error(&err); }
+    g_free(bus_name);
+    g_object_unref(conn);
+}
+
+static void
+on_icon_pressed(GtkGestureClick *gesture, gint n_press,
+                gdouble x, gdouble y, gpointer data)
+{
+    GsniHostItem *item = GSNI_HOST_ITEM(data);
+    guint button = gtk_gesture_single_get_current_button(
+        GTK_GESTURE_SINGLE(gesture));
+    GtkWidget *row = gtk_event_controller_get_widget(
+        GTK_EVENT_CONTROLLER(gesture));
+
+    if (button == GDK_BUTTON_SECONDARY)
+        show_context_menu(item, row, x, y);
+    else
+        activate_item(item, x, y);
+}
+
+/* ── Item lifecycle ────────────────────────────────────────── */
 
 static void
 on_item_added(GsniHost *host, GsniHostItem *item, gpointer data)
@@ -29,7 +262,6 @@ on_item_added(GsniHost *host, GsniHostItem *item, gpointer data)
     g_print("Item added: %s\n", gsni_host_item_get_id(item));
     add_tray_icon(app, item);
 }
-
 static void
 on_item_removed(GsniHost *host, GsniHostItem *item, gpointer data)
 {
@@ -39,52 +271,10 @@ on_item_removed(GsniHost *host, GsniHostItem *item, gpointer data)
 }
 
 static void
-on_icon_clicked(GtkGestureClick *gesture, gint n_press,
-                gdouble x, gdouble y, gpointer data)
-{
-    GsniHostItem *item = GSNI_HOST_ITEM(data);
-
-    if (gsni_host_item_get_item_is_menu(item)) {
-        /* DBusMenu-based item — the host shows the menu.
-         * For now, just activate (most items treat this as toggle). */
-        g_print("Item %s is menu-type (no direct activation)\n",
-                gsni_host_item_get_id(item));
-        return;
-    }
-
-    /* Call Activate on the remote SNI item via D-Bus */
-    GDBusConnection *conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
-    if (!conn)
-        return;
-
-    const gchar *service = gsni_host_item_get_service(item);
-    gchar *bus_name = g_strdup(service);
-    gchar *slash = strchr(bus_name, '/');
-    if (slash)
-        *slash = '\0';
-
-    GError *err = NULL;
-    GVariant *result = g_dbus_connection_call_sync(
-        conn, bus_name, "/StatusNotifierItem",
-        "org.kde.StatusNotifierItem", "Activate",
-        g_variant_new("(ii)", (gint)x, (gint)y),
-        NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &err);
-
-    if (result)
-        g_variant_unref(result);
-    else
-        g_warning("Activate failed for %s: %s", bus_name, err->message);
-    g_clear_error(&err);
-    g_free(bus_name);
-    g_object_unref(conn);
-}
-
-static void
 add_tray_icon(AppData *app, GsniHostItem *item)
 {
     GtkWidget *row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
 
-    /* Icon */
     GtkWidget *image = gtk_image_new();
     const gchar *icon_name = gsni_host_item_get_icon_name(item);
     if (icon_name && icon_name[0])
@@ -94,38 +284,32 @@ add_tray_icon(AppData *app, GsniHostItem *item)
     gtk_image_set_pixel_size(GTK_IMAGE(image), 24);
     gtk_box_append(GTK_BOX(row), image);
 
-    /* Title */
     const gchar *title = gsni_host_item_get_title(item);
     const gchar *item_id = gsni_host_item_get_id(item);
     gchar *label_text = g_strdup_printf("<b>%s</b>\n<small>%s</small>",
-        title ? title : "(untitled)",
-        item_id ? item_id : "");
+        title ? title : "(untitled)", item_id ? item_id : "");
     GtkWidget *label = gtk_label_new(label_text);
     gtk_label_set_use_markup(GTK_LABEL(label), TRUE);
     gtk_label_set_xalign(GTK_LABEL(label), 0.0f);
     gtk_box_append(GTK_BOX(row), label);
     g_free(label_text);
 
-    /* Status indicator */
     GsniStatus status = gsni_host_item_get_status(item);
-    GtkWidget *status_label = gtk_label_new("");
+    GtkWidget *sl = gtk_label_new("");
     switch (status) {
     case GSNI_STATUS_ACTIVE:
-        gtk_label_set_text(GTK_LABEL(status_label), "● Active");
-        break;
+        gtk_label_set_text(GTK_LABEL(sl), "● Active"); break;
     case GSNI_STATUS_NEEDS_ATTENTION:
-        gtk_label_set_text(GTK_LABEL(status_label), "⚠ Attention");
-        break;
+        gtk_label_set_text(GTK_LABEL(sl), "⚠ Attention"); break;
     default:
-        gtk_label_set_text(GTK_LABEL(status_label), "○ Passive");
-        break;
+        gtk_label_set_text(GTK_LABEL(sl), "○ Passive"); break;
     }
-    gtk_widget_set_margin_start(status_label, 8);
-    gtk_box_append(GTK_BOX(row), status_label);
+    gtk_widget_set_margin_start(sl, 8);
+    gtk_box_append(GTK_BOX(row), sl);
 
-    /* Make clickable */
     GtkGesture *click = gtk_gesture_click_new();
-    g_signal_connect(click, "pressed", G_CALLBACK(on_icon_clicked),
+    gtk_gesture_single_set_button(GTK_GESTURE_SINGLE(click), 0);
+    g_signal_connect(click, "pressed", G_CALLBACK(on_icon_pressed),
                      g_object_ref(item));
     gtk_widget_add_controller(row, GTK_EVENT_CONTROLLER(click));
 
@@ -155,6 +339,8 @@ load_existing_items(AppData *app)
     }
 }
 
+/* ── Application ───────────────────────────────────────────── */
+
 static void
 app_activate(GApplication *gapp)
 {
@@ -180,9 +366,7 @@ app_activate(GApplication *gapp)
     data->item_widgets = g_hash_table_new_full(g_direct_hash, g_direct_equal,
                                                g_object_unref, NULL);
 
-    /* Create and register the host */
     data->host = gsni_host_new(NULL);
-
     g_signal_connect(data->host, "item-added",
                      G_CALLBACK(on_item_added), data);
     g_signal_connect(data->host, "item-removed",
@@ -197,13 +381,10 @@ app_activate(GApplication *gapp)
         g_clear_error(&err);
     }
 
-    /* Pump the main loop to let the watcher appear and items load */
     gint n = 0;
     while (n++ < 50)
         g_main_context_iteration(NULL, FALSE);
-
     load_existing_items(data);
-
     gtk_window_present(GTK_WINDOW(window));
 }
 
@@ -225,7 +406,6 @@ main(int argc, char *argv[])
                                               G_APPLICATION_DEFAULT_FLAGS);
     g_signal_connect(app, "activate", G_CALLBACK(app_activate), NULL);
     g_signal_connect(app, "shutdown", G_CALLBACK(app_shutdown), NULL);
-
     int status = g_application_run(G_APPLICATION(app), argc, argv);
     g_object_unref(app);
     return status;
