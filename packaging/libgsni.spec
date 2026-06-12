@@ -35,12 +35,12 @@ Requires:       pkgconfig(glib-2.0) >= 2.80
 %description    -n %{name}-devel
 Headers and pkg-config file for developing applications using libgsni.
 
-%package        -n gir1.2-gsni-1.0
+%package        -n gir1.2-Gsni-1
 Summary:        GObject Introspection data for %{name}
 Requires:       %{name}1%{?_isa} = %{version}-%{release}
 BuildArch:      noarch
 
-%description    -n gir1.2-gsni-1.0
+%description    -n gir1.2-Gsni-1
 GObject Introspection typelib for using libgsni from Python and other
 language bindings.
 
@@ -68,7 +68,7 @@ language bindings.
 %{_libdir}/pkgconfig/gsni.pc
 %{_datadir}/gir-1.0/Gsni-1.gir
 
-%files -n gir1.2-gsni-1.0
+%files -n gir1.2-Gsni-1
 %{_libdir}/girepository-1.0/Gsni-1.typelib
 
 %changelog
