@@ -11,6 +11,7 @@ project('gsni', 'c',
 
 version_array = meson.project_version().split('.')
 api_version = version_array[0]
+gi_version = '@0@.0'.format(version_array[0])
 so_version = '1.0.0'
 
 gsni_build_inc = include_directories('.')

@@ -56,7 +56,7 @@ if get_option('introspection')
   gsni_gir = gnome.generate_gir(libgsni,
     sources: gsni_sources + gsni_public_headers,
     namespace: 'Gsni',
-    nsversion: api_version,
+    nsversion: gi_version,
     identifier_prefix: 'Gsni',
     symbol_prefix: 'gsni',
     includes: ['GObject-2.0', 'Gio-2.0', 'GdkPixbuf-2.0'],
