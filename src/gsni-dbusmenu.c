@@ -424,20 +424,63 @@ build_layout_recursive(GsniDBusMenu *self, GMenuModel *model,
 
     if (recurrence != 0 && n_items > 0) {
         gint child_recurse = (recurrence > 0) ? recurrence - 1 : -1;
+        gint child_index = 0;
 
         for (gint i = 0; i < n_items; i++) {
             GMenuModel *section = g_menu_model_get_item_link(model, i,
                 G_MENU_LINK_SECTION);
 
             if (section) {
+                /* Insert separator between sections */
+                if (child_index > 0) {
+                    GVariantBuilder sep_dict;
+                    g_variant_builder_init(&sep_dict, G_VARIANT_TYPE("a{sv}"));
+                    collect_item_properties(NULL, -1, NULL,
+                                            props, n_props, TRUE, FALSE,
+                                            &sep_dict);
+                    GVariant *sep_props = g_variant_builder_end(&sep_dict);
+                    g_variant_ref_sink(sep_props);
+
+                    GVariantBuilder sep_node;
+                    g_variant_builder_init(&sep_node, G_VARIANT_TYPE("(ia{sv}av)"));
+                    g_variant_builder_add(&sep_node, "i", encode_id(parent_id, child_index));
+                    g_variant_builder_add_value(&sep_node, sep_props);
+                    g_variant_builder_add(&sep_node, "av", NULL);
+                    g_variant_unref(sep_props);
+
+                    GVariant *sep_var = g_variant_builder_end(&sep_node);
+                    g_variant_ref_sink(sep_var);
+                    GVariant *sep_wrapped = g_variant_new_variant(sep_var);
+                    g_variant_builder_add_value(&children_arr, sep_wrapped);
+                    g_variant_unref(sep_var);
+                    child_index++;
+                }
+
+                /* Recurse into section – items become children (flattened) */
+                g_autoptr(GVariant) sec_layout = build_layout_recursive(
+                    self, section, encode_id(parent_id, child_index),
+                    child_recurse, props, n_props, FALSE);
                 g_object_unref(section);
-                /* skip sections for now — they're flattened */
+
+                if (sec_layout) {
+                    GVariant *sec_children = g_variant_get_child_value(sec_layout, 2);
+                    g_variant_ref_sink(sec_children);
+                    guint sec_n = g_variant_n_children(sec_children);
+                    for (guint j = 0; j < sec_n; j++) {
+                        GVariant *child = g_variant_get_child_value(sec_children, j);
+                        g_variant_builder_add_value(&children_arr, child);
+                        g_variant_unref(child);
+                    }
+                    g_variant_unref(sec_children);
+                    child_index += (gint)sec_n;
+                }
+
                 continue;
             }
 
             GMenuModel *submenu = g_menu_model_get_item_link(model, i,
                 G_MENU_LINK_SUBMENU);
-            guint32 child_id = encode_id(parent_id, i);
+            guint32 child_id = encode_id(parent_id, child_index);
 
             GVariantBuilder item_dict;
             collect_item_properties(model, i, self->action_group,
@@ -476,6 +519,7 @@ build_layout_recursive(GsniDBusMenu *self, GMenuModel *model,
             GVariant *wrapped = g_variant_new_variant(node_var);
             g_variant_builder_add_value(&children_arr, wrapped);
             g_variant_unref(node_var);
+            child_index++;
         }
     }
 
