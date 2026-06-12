@@ -41,8 +41,6 @@ static const gchar *track_list[] = {
 };
 
 static void rebuild_menu(AppData *app);
-static gboolean rebuild_menu_idle(gpointer data);
-static void rebuild_menu_deferred(AppData *app);
 
 static void
 transition_state(AppData *app, PlaybackState new_state)
@@ -66,7 +64,6 @@ transition_state(AppData *app, PlaybackState new_state)
         gsni_item_set_title(app->item, new_state == STATE_PLAYING
             ? "▶ Now Playing" : "⏸ Music Controller");
         rebuild_menu(app);
-        rebuild_menu_deferred(app);
     }
 }
 
@@ -107,7 +104,6 @@ on_next(GSimpleAction *action, GVariant *param, gpointer data)
     if (app->state == STATE_PLAYING)
         gsni_item_set_title(app->item, "▶ Now Playing");
     rebuild_menu(app);
-    rebuild_menu_deferred(app);
 }
 
 static void
@@ -127,7 +123,6 @@ on_previous(GSimpleAction *action, GVariant *param, gpointer data)
     if (app->state == STATE_PLAYING)
         gsni_item_set_title(app->item, "▶ Now Playing");
     rebuild_menu(app);
-    rebuild_menu_deferred(app);
 }
 
 static void
@@ -187,81 +182,81 @@ on_quit_cb(GSimpleAction *action, GVariant *param, gpointer data)
 static void
 rebuild_menu(AppData *app)
 {
-    g_menu_remove_all(app->menu);
+    GMenu *menu = g_menu_new();
 
-    /* Transport controls — change based on playback state */
     switch (app->state) {
     case STATE_STOPPED:
-        g_menu_append(app->menu, "▶ Play", "play");
-        g_menu_append(app->menu, "⏭ Next", "next");
-        g_menu_append(app->menu, "⏮ Previous", "prev");
+        g_menu_append(menu, "▶ Play", "play");
+        g_menu_append(menu, "⏭ Next", "next");
+        g_menu_append(menu, "⏮ Previous", "prev");
         break;
     case STATE_PLAYING:
-        g_menu_append(app->menu, "⏯ Pause", "pause");
-        g_menu_append(app->menu, "⏭ Next", "next");
-        g_menu_append(app->menu, "⏮ Previous", "prev");
-        g_menu_append(app->menu, "⏹ Stop", "stop");
+        g_menu_append(menu, "⏯ Pause", "pause");
+        g_menu_append(menu, "⏭ Next", "next");
+        g_menu_append(menu, "⏮ Previous", "prev");
+        g_menu_append(menu, "⏹ Stop", "stop");
         break;
     case STATE_PAUSED:
-        g_menu_append(app->menu, "▶ Resume", "play");
-        g_menu_append(app->menu, "⏹ Stop", "stop");
+        g_menu_append(menu, "▶ Resume", "play");
+        g_menu_append(menu, "⏹ Stop", "stop");
         break;
     }
 
-    GMenu *empty = g_menu_new();
-    GMenuItem *sep = g_menu_item_new_section(NULL, G_MENU_MODEL(empty));
-    g_menu_append_item(app->menu, sep);
-    g_object_unref(sep);
-    g_object_unref(empty);
+    {
+        GMenu *empty = g_menu_new();
+        GMenuItem *sep = g_menu_item_new_section(NULL, G_MENU_MODEL(empty));
+        g_menu_append_item(menu, sep);
+        g_object_unref(sep);
+        g_object_unref(empty);
+    }
 
-    /* Track info */
-    gchar *track_label = g_strdup_printf("🎵 %s", app->track_title);
-    g_menu_append(app->menu, track_label, NULL);
-    g_free(track_label);
+    {
+        gchar *track_label = g_strdup_printf("🎵 %s", app->track_title);
+        g_menu_append(menu, track_label, NULL);
+        g_free(track_label);
+    }
 
-    GMenu *empty2 = g_menu_new();
-    GMenuItem *sep2 = g_menu_item_new_section(NULL, G_MENU_MODEL(empty2));
-    g_menu_append_item(app->menu, sep2);
-    g_object_unref(sep2);
-    g_object_unref(empty2);
+    {
+        GMenu *empty = g_menu_new();
+        GMenuItem *sep = g_menu_item_new_section(NULL, G_MENU_MODEL(empty));
+        g_menu_append_item(menu, sep);
+        g_object_unref(sep);
+        g_object_unref(empty);
+    }
 
-    /* Toggles */
-    GMenuItem *shuffle = g_menu_item_new("🔀 Shuffle", "shuffle");
-    g_menu_append_item(app->menu, shuffle);
-    g_object_unref(shuffle);
+    g_menu_append(menu, "🔀 Shuffle", "shuffle");
+    g_menu_append(menu, "🔁 Repeat", "repeat");
 
-    GMenuItem *repeat = g_menu_item_new("🔁 Repeat", "repeat");
-    g_menu_append_item(app->menu, repeat);
-    g_object_unref(repeat);
+    {
+        GMenu *empty = g_menu_new();
+        GMenuItem *sep = g_menu_item_new_section(NULL, G_MENU_MODEL(empty));
+        g_menu_append_item(menu, sep);
+        g_object_unref(sep);
+        g_object_unref(empty);
+    }
 
-    GMenu *empty3 = g_menu_new();
-    GMenuItem *sep3 = g_menu_item_new_section(NULL, G_MENU_MODEL(empty3));
-    g_menu_append_item(app->menu, sep3);
-    g_object_unref(sep3);
-    g_object_unref(empty3);
+    {
+        GMenu *radio_menu = g_menu_new();
+        g_menu_append(radio_menu, "Quality: Low", "radio(10)");
+        g_menu_append(radio_menu, "Quality: Medium", "radio(20)");
+        g_menu_append(radio_menu, "Quality: High", "radio(30)");
+        g_menu_append_submenu(menu, "⚙ Quality", G_MENU_MODEL(radio_menu));
+        g_object_unref(radio_menu);
+    }
 
-    /* Radio group */
-    GMenu *radio_menu = g_menu_new();
-    GMenuItem *r1 = g_menu_item_new("Quality: Low", "radio(10)");
-    g_menu_append_item(radio_menu, r1);
-    g_object_unref(r1);
-    GMenuItem *r2 = g_menu_item_new("Quality: Medium", "radio(20)");
-    g_menu_append_item(radio_menu, r2);
-    g_object_unref(r2);
-    GMenuItem *r3 = g_menu_item_new("Quality: High", "radio(30)");
-    g_menu_append_item(radio_menu, r3);
-    g_object_unref(r3);
+    {
+        GMenu *empty = g_menu_new();
+        GMenuItem *sep = g_menu_item_new_section(NULL, G_MENU_MODEL(empty));
+        g_menu_append_item(menu, sep);
+        g_object_unref(sep);
+        g_object_unref(empty);
+    }
 
-    g_menu_append_submenu(app->menu, "⚙ Quality", G_MENU_MODEL(radio_menu));
-    g_object_unref(radio_menu);
+    g_menu_append(menu, "❌ Quit", "quit");
 
-    GMenu *empty4 = g_menu_new();
-    GMenuItem *sep4 = g_menu_item_new_section(NULL, G_MENU_MODEL(empty4));
-    g_menu_append_item(app->menu, sep4);
-    g_object_unref(sep4);
-    g_object_unref(empty4);
-
-    g_menu_append(app->menu, "❌ Quit", "quit");
+    gsni_item_set_menu(app->item, G_MENU_MODEL(menu));
+    g_object_unref(app->menu);
+    app->menu = menu;
 }
 
 static gboolean
@@ -302,20 +297,6 @@ on_stdin(GIOChannel *channel, GIOCondition cond, gpointer data)
 
     g_free(line);
     return TRUE;
-}
-
-static gboolean
-rebuild_menu_idle(gpointer data)
-{
-    AppData *app = data;
-    gsni_item_set_menu(app->item, G_MENU_MODEL(app->menu));
-    return G_SOURCE_REMOVE;
-}
-
-void
-rebuild_menu_deferred(AppData *app)
-{
-    g_idle_add(rebuild_menu_idle, app);
 }
 
 int
@@ -394,7 +375,6 @@ main(int argc, char *argv[])
 
     app.menu = g_menu_new();
     rebuild_menu(&app);
-    gsni_item_set_menu(app.item, G_MENU_MODEL(app.menu));
     gsni_item_set_action_group(app.item, G_ACTION_GROUP(app.actions));
     gsni_item_register(app.item, NULL);
 
