@@ -40,14 +40,14 @@ on_play_pause(GSimpleAction *action, GVariant *param, gpointer data)
 static void
 on_next(GSimpleAction *action, GVariant *param, gpointer data)
 {
-    AppData *app = data;
+    (void)action; (void)param; (void)data;
     g_print("⏭ Next track\n");
 }
 
 static void
 on_previous(GSimpleAction *action, GVariant *param, gpointer data)
 {
-    AppData *app = data;
+    (void)action; (void)param; (void)data;
     g_print("⏮ Previous track\n");
 }
 
@@ -102,8 +102,6 @@ rebuild_menu(AppData *app)
     g_menu_append(app->menu, "⏮ Previous", "prev");
 
     GMenuItem *shuffle = g_menu_item_new("🔀 Shuffle", "shuffle");
-    g_menu_item_set_attribute(shuffle, "target",
-        app->shuffle_on ? "true" : "false");
     g_menu_append_item(app->menu, shuffle);
     g_object_unref(shuffle);
 
