@@ -25,3 +25,9 @@ bindings/python/gsni.egg-info/
 bindings/python/dist/
 bindings/python/__pycache__/
 bindings/python/.pytest_cache/
+dist/
+bindings/python/dist/
+bindings/python/build/
+bindings/python/__pycache__/
+bindings/python/gsni/__pycache__/
+bindings/python/tests/__pycache__/
