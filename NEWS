@@ -1,7 +1,17 @@
-1.0.2 (unreleased)
+1.0.2 (2026-06-12)
 ------------------
 
+- Python bindings parity: full property access on StatusNotifierItem,
+  StatusNotifierHost and StatusNotifierHostItem wrapper classes
+- 1:1 Python ports of all C examples (menu_item, custom_icon,
+  music_controller, tray_host)
 - DBusMenu separator support between GMenu sections
+- Python tests expanded from 5 to 12 covering wrapper API
+- GI annotations on all GsniItem and GsniHostItem getters
+  (transfer none, nullable) — fixes Python double-free on get_tooltip
+- Signal shorthands: on_secondary_activate, on_quit_requested
+- CI fixes: RPM/DEB version sync, PYTHONPATH for Python tests
+- Spec changelog for 1.0.2
 
 1.0.1 (2026-06-12)
 ------------------
