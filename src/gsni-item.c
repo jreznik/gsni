@@ -657,6 +657,12 @@ gsni_item_set_icon_pixbuf(GsniItem *self, GdkPixbuf *pixbuf)
         gsni_item_dbus_emit_signal(priv->dbus, "NewIcon", NULL);
 }
 
+/**
+ * gsni_item_get_icon_pixbuf:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none): the icon pixbuf
+ */
 GdkPixbuf *
 gsni_item_get_icon_pixbuf(GsniItem *self)
 {
@@ -819,6 +825,12 @@ gsni_item_set_menu(GsniItem *self, GMenuModel *menu)
     }
 }
 
+/**
+ * gsni_item_get_menu:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none): the menu model
+ */
 GMenuModel *
 gsni_item_get_menu(GsniItem *self)
 {
@@ -848,6 +860,12 @@ gsni_item_set_action_group(GsniItem *self, GActionGroup *actions)
     }
 }
 
+/**
+ * gsni_item_get_action_group:
+ * @self: a #GsniItem
+ *
+ * Returns: (transfer none): the action group
+ */
 GActionGroup *
 gsni_item_get_action_group(GsniItem *self)
 {

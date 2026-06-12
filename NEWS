@@ -1,0 +1,14 @@
+1.0.0 (2026-06-12)
+------------------
+
+- Initial release
+- GsniItem for creating StatusNotifierItem tray icons
+- GsniHost and GsniHostItem for consuming SNI items
+- DBusMenu (com.canonical.dbusmenu) server adapter
+- GIO native menu export (org.gtk.Menus / org.gtk.Actions)
+- D-Bus watcher lifecycle management with auto-reconnect
+- GdkPixbuf to D-Bus a(iiay) serialization
+- GObject Introspection with Python bindings
+- GTK4 system tray host example
+- RPM and DEB packaging
+- PyPI distribution via meson-python

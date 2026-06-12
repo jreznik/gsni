@@ -312,6 +312,12 @@ gsni_host_get_is_registered(GsniHost *self)
     return self->is_registered;
 }
 
+/**
+ * gsni_host_get_items:
+ * @self: a #GsniHost
+ *
+ * Returns: (transfer none): the list of items
+ */
 GListModel *
 gsni_host_get_items(GsniHost *self)
 {

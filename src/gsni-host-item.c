@@ -316,6 +316,12 @@ gsni_host_item_get_icon_name(GsniHostItem *self)
     g_return_val_if_fail(GSNI_IS_HOST_ITEM(self), NULL);
     return self->icon_name;
 }
+/**
+ * gsni_host_item_get_icon_pixbuf:
+ * @self: a #GsniHostItem
+ *
+ * Returns: (transfer none): the icon pixbuf
+ */
 GdkPixbuf *
 gsni_host_item_get_icon_pixbuf(GsniHostItem *self)
 {

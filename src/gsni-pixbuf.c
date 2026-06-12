@@ -39,7 +39,7 @@ swap_from_network_byte_order(guint8 *data, gsize len)
     }
 }
 
-/*
+/**
  * gsni_pixbuf_to_dbus_image:
  * @pixbuf: a #GdkPixbuf to serialize
  *
@@ -92,7 +92,7 @@ gsni_pixbuf_to_dbus_image(GdkPixbuf *pixbuf)
     return result;
 }
 
-/*
+/**
  * gsni_pixbuf_to_dbus_image_vector:
  * @pixbuf: a #GdkPixbuf
  *
@@ -126,7 +126,7 @@ gsni_pixbuf_to_dbus_image_vector(GdkPixbuf *pixbuf)
     return g_variant_builder_end(&builder);
 }
 
-/*
+/**
  * gsni_dbus_image_to_pixbuf:
  * @variant: a #GVariant of type (iiay), as returned by the SNI protocol
  *
