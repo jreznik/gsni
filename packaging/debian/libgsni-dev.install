@@ -1,0 +1,4 @@
+usr/include/gsni/
+usr/lib/*/libgsni.so
+usr/lib/*/pkgconfig/gsni.pc
+usr/share/gir-1.0/Gsni-*.gir
