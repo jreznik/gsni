@@ -257,6 +257,7 @@ rebuild_menu(AppData *app)
     g_object_unref(empty4);
 
     g_menu_append(app->menu, "❌ Quit", "quit");
+    gsni_item_set_menu(app->item, G_MENU_MODEL(app->menu));
 }
 
 static gboolean
