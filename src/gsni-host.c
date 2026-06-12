@@ -174,8 +174,16 @@ gsni_host_load_existing_items(GsniHost *self)
         return;
     }
 
-    g_autoptr(GVariant) inner = g_variant_get_variant(prop);
+    /* g_dbus_proxy_call_sync returns out-args tuple (v).
+     * Properties.Get returns v, so proxy returns (v). */
+    g_autoptr(GVariant) result = g_variant_get_child_value(prop, 0);
     g_variant_unref(prop);
+
+    if (!g_variant_is_of_type(result, G_VARIANT_TYPE_VARIANT)) {
+        g_warning("GsniHost: unexpected GetAll reply type");
+        return;
+    }
+    g_autoptr(GVariant) inner = g_variant_get_variant(result);
 
     GVariantIter iter;
     g_variant_iter_init(&iter, inner);

@@ -97,54 +97,49 @@ gsni_host_item_load_properties(GsniHostItem *self)
     g_autoptr(GVariant) inner = g_variant_get_child_value(result, 0);
     g_variant_unref(result);
 
-    GVariantIter iter;
-    g_variant_iter_init(&iter, inner);
-    gchar *key;
-    g_autoptr(GVariant) value = NULL;
+    {
+        GVariantIter iter;
+        g_variant_iter_init(&iter, inner);
+        const gchar *prop_name;
+        GVariant *entry_val;
 
-    while (g_variant_iter_next(&iter, "{&sv}", &key, &value)) {
-        if (g_str_equal(key, "Id")) {
-            g_free(self->id);
-            self->id = g_variant_dup_string(g_variant_get_variant(value), NULL);
-        } else if (g_str_equal(key, "Title")) {
-            g_free(self->title);
-            self->title = g_variant_dup_string(g_variant_get_variant(value), NULL);
-        } else if (g_str_equal(key, "Status")) {
-            g_autoptr(GVariant) sv = g_variant_get_variant(value);
-            self->status = parse_status(g_variant_get_string(sv, NULL));
-        } else if (g_str_equal(key, "Category")) {
-            g_autoptr(GVariant) cv = g_variant_get_variant(value);
-            self->category = parse_category(g_variant_get_string(cv, NULL));
-        } else if (g_str_equal(key, "IconName")) {
-            g_free(self->icon_name);
-            self->icon_name = g_variant_dup_string(g_variant_get_variant(value), NULL);
-        } else if (g_str_equal(key, "Menu")) {
-            g_free(self->menu_path);
-            self->menu_path = g_variant_dup_string(g_variant_get_variant(value), NULL);
-        } else if (g_str_equal(key, "OverlayIconName")) {
-            g_free(self->overlay_icon_name);
-            self->overlay_icon_name = g_variant_dup_string(g_variant_get_variant(value), NULL);
-        } else if (g_str_equal(key, "AttentionIconName")) {
-            g_free(self->attention_icon_name);
-            self->attention_icon_name = g_variant_dup_string(g_variant_get_variant(value), NULL);
-        } else if (g_str_equal(key, "ItemIsMenu")) {
-            g_autoptr(GVariant) bv = g_variant_get_variant(value);
-            self->item_is_menu = g_variant_get_boolean(bv);
-        } else if (g_str_equal(key, "WindowId")) {
-            g_autoptr(GVariant) iv = g_variant_get_variant(value);
-            self->window_id = g_variant_get_int32(iv);
-        } else if (g_str_equal(key, "IconPixmap")) {
-            g_clear_object(&self->icon_pixbuf);
-            g_autoptr(GVariant) pv = g_variant_get_variant(value);
-            /* Take the first icon if available */
-            if (g_variant_n_children(pv) > 0) {
-                g_autoptr(GVariant) first = g_variant_get_child_value(pv, 0);
-                self->icon_pixbuf = gsni_dbus_image_to_pixbuf(first);
+        while (g_variant_iter_next(&iter, "{&sv}", &prop_name, &entry_val)) {
+
+            if (g_str_equal(prop_name, "Id")) {
+                g_free(self->id);
+                self->id = g_variant_dup_string(entry_val, NULL);
+            } else if (g_str_equal(prop_name, "Title")) {
+                g_free(self->title);
+                self->title = g_variant_dup_string(entry_val, NULL);
+            } else if (g_str_equal(prop_name, "Status")) {
+                self->status = parse_status(g_variant_get_string(entry_val, NULL));
+            } else if (g_str_equal(prop_name, "Category")) {
+                self->category = parse_category(g_variant_get_string(entry_val, NULL));
+            } else if (g_str_equal(prop_name, "IconName")) {
+                g_free(self->icon_name);
+                self->icon_name = g_variant_dup_string(entry_val, NULL);
+            } else if (g_str_equal(prop_name, "Menu")) {
+                g_free(self->menu_path);
+                self->menu_path = g_variant_dup_string(entry_val, NULL);
+            } else if (g_str_equal(prop_name, "OverlayIconName")) {
+                g_free(self->overlay_icon_name);
+                self->overlay_icon_name = g_variant_dup_string(entry_val, NULL);
+            } else if (g_str_equal(prop_name, "AttentionIconName")) {
+                g_free(self->attention_icon_name);
+                self->attention_icon_name = g_variant_dup_string(entry_val, NULL);
+            } else if (g_str_equal(prop_name, "ItemIsMenu")) {
+                self->item_is_menu = g_variant_get_boolean(entry_val);
+            } else if (g_str_equal(prop_name, "WindowId")) {
+                self->window_id = g_variant_get_int32(entry_val);
+            } else if (g_str_equal(prop_name, "IconPixmap")) {
+                g_clear_object(&self->icon_pixbuf);
+                if (g_variant_n_children(entry_val) > 0) {
+                    g_autoptr(GVariant) first = g_variant_get_child_value(entry_val, 0);
+                    self->icon_pixbuf = gsni_dbus_image_to_pixbuf(first);
+                }
             }
+            g_variant_unref(entry_val);
         }
-        g_free(key);
-        g_variant_unref(value);
-        value = NULL;
     }
 
     self->loaded = TRUE;

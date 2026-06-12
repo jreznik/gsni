@@ -12,3 +12,11 @@ example_simple = executable('simple-item', 'simple-item.c',
 example_menu = executable('menu-item', 'menu-item.c',
   dependencies: example_deps,
 )
+
+gtk4_dep = dependency('gtk4', required: false)
+if gtk4_dep.found()
+  tray_host_deps = example_deps + [gtk4_dep]
+  example_tray = executable('tray-host', 'tray-host.c',
+    dependencies: tray_host_deps,
+  )
+endif
