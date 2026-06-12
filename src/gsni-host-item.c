@@ -8,10 +8,11 @@
  * values as GObject properties.
  */
 
-#include <string.h>
 #include "gsni/gsni-host-item.h"
 #include "gsni/gsni-enums.h"
 #include "gsni/gsni-pixbuf.h"
+
+#include <string.h>
 
 #define SNI_IFACE  "org.kde.StatusNotifierItem"
 #define PROPS_IFACE "org.freedesktop.DBus.Properties"
@@ -60,7 +61,6 @@ enum {
     N_PROPS
 };
 
-/* ── property parsing from D-Bus ─────────────────────────── */
 
 static GsniStatus
 parse_status(const gchar *s)
@@ -162,7 +162,6 @@ on_properties_changed(GDBusConnection *conn, const gchar *sender,
     gsni_host_item_load_properties(self);
 }
 
-/* ── GObject lifecycle ──────────────────────────────────── */
 
 static void
 gsni_host_item_get_property(GObject *obj, guint prop_id,
@@ -251,7 +250,6 @@ gsni_host_item_init(GsniHostItem *self)
     self->category = GSNI_CATEGORY_APPLICATION_STATUS;
 }
 
-/* ── internal constructor ───────────────────────────────── */
 
 GsniHostItem *
 gsni_host_item_new(const gchar *service, GDBusConnection *connection)
@@ -287,7 +285,6 @@ gsni_host_item_new(const gchar *service, GDBusConnection *connection)
     return self;
 }
 
-/* ── public getters ─────────────────────────────────────── */
 
 const gchar *
 gsni_host_item_get_id(GsniHostItem *self)

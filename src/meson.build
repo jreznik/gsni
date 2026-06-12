@@ -49,3 +49,20 @@ if get_option('tests')
     dependencies: deps,
   )
 endif
+
+# GObject Introspection
+if get_option('introspection')
+  gnome = import('gnome')
+  gsni_gir = gnome.generate_gir(libgsni,
+    sources: gsni_sources + gsni_public_headers,
+    namespace: 'Gsni',
+    nsversion: api_version,
+    identifier_prefix: 'Gsni',
+    symbol_prefix: 'gsni',
+    includes: ['GObject-2.0', 'Gio-2.0', 'GdkPixbuf-2.0'],
+    header: 'gsni/gsni.h',
+    install: true,
+    install_dir_gir: get_option('datadir') / 'gir-1.0',
+    install_dir_typelib: get_option('libdir') / 'girepository-1.0',
+  )
+endif

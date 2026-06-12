@@ -3,17 +3,10 @@
  *
  * DBusMenu (com.canonical.dbusmenu) server adapter.
  *
- * Translates GMenuModel + GActionGroup into the DBusMenu wire protocol
- * so that KDE Plasma, GNOME appindicator, XFCE, MATE, Budgie, and
- * other SNI hosts can render context menus.
- *
- * ID scheme: position-encoded.
- *   Root = 0.
- *   Child at position p of parent ID pid = (pid << 10) | (p + 1).
- *   Max 1024 children per submenu, ~10 levels deep using int32 range.
- *
- * Structural changes → LayoutUpdated(0) (full tree invalidation).
- * Property-only changes → ItemsPropertiesUpdated (coalesced in idle).
+ * Translates GMenuModel + GActionGroup to the DBusMenu wire protocol.
+ * ID scheme: position-encoded — root=0, child at pos p of parent pid
+ * is (pid << 10) | (p + 1). Structural changes emit LayoutUpdated(0),
+ * property-only changes emit ItemsPropertiesUpdated.
  */
 
 #include "gsni-dbusmenu.h"
@@ -115,7 +108,6 @@ struct _GsniDBusMenu {
     guint            layout_idle_id;   /* 0 = not scheduled */
 };
 
-/* Forward declarations */
 static GVariant *build_layout_recursive(GsniDBusMenu *self,
                                         GMenuModel *model,
                                         guint32 parent_id,
@@ -126,7 +118,6 @@ static GVariant *build_layout_recursive(GsniDBusMenu *self,
 static void
 schedule_layout_update(GsniDBusMenu *self);
 
-/* --- D-Bus method dispatch --- */
 
 static void
 dbusmenu_method_call(GDBusConnection       *connection,
@@ -553,11 +544,8 @@ ensure_iface_info(void)
     GError *error = NULL;
     GDBusNodeInfo *node = g_dbus_node_info_new_for_xml(dbusmenu_xml,
                                                        &error);
-    if (node == NULL) {
+    if (node == NULL)
         g_error("Failed to parse dbusmenu XML: %s", error->message);
-        g_error_free(error);
-        return;
-    }
 
     dbusmenu_iface_info = g_dbus_node_info_lookup_interface(node,
         DBUSMENU_IFACE);

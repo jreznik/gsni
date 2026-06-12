@@ -105,9 +105,11 @@ gsni_item_dbus_method_call(GDBusConnection       *connection,
         g_dbus_method_invocation_return_value(invocation, NULL);
 
     } else if (g_str_equal(method, "ContextMenu")) {
-        gint x, y;
-        g_variant_get(params, "(ii)", &x, &y);
-        g_dbus_method_invocation_return_value(invocation, NULL);
+        /* Return UnknownMethod — same as ksni. Tells the host to
+         * use the DBusMenu interface from the Menu property instead. */
+        g_dbus_method_invocation_return_error(invocation,
+            G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+            "Not supported, please use the Menu property");
 
     } else if (g_str_equal(method, "Scroll")) {
         gint delta;
@@ -150,7 +152,7 @@ gsni_item_dbus_get_property(GDBusConnection *connection,
 
     if (g_str_equal(property, "Category")) {
         GEnumValue *ev = g_enum_get_value(
-            g_type_class_ref(GSNI_TYPE_CATEGORY),
+            g_type_class_peek(GSNI_TYPE_CATEGORY),
             gsni_item_get_category(self->item));
         return g_variant_new_string(ev ? ev->value_nick : "ApplicationStatus");
     }
@@ -167,7 +169,7 @@ gsni_item_dbus_get_property(GDBusConnection *connection,
 
     if (g_str_equal(property, "Status")) {
         GEnumValue *ev = g_enum_get_value(
-            g_type_class_ref(GSNI_TYPE_STATUS),
+            g_type_class_peek(GSNI_TYPE_STATUS),
             gsni_item_get_status(self->item));
         return g_variant_new_string(ev ? ev->value_nick : "Passive");
     }
@@ -297,28 +299,30 @@ gsni_item_dbus_export(GsniItemDbus *self, GError **error)
     return self->reg_id != 0;
 }
 
-void
-gsni_item_dbus_unexport(GsniItemDbus *self)
+static void
+clear_menu_exports(GsniItemDbus *self)
 {
-    g_return_if_fail(self != NULL);
-
     if (self->dbusmenu) {
         gsni_dbusmenu_unexport(self->dbusmenu);
         gsni_dbusmenu_free(self->dbusmenu);
         self->dbusmenu = NULL;
     }
-
     if (self->gio_menu_id) {
-        g_dbus_connection_unexport_menu_model(self->connection,
-                                              self->gio_menu_id);
+        g_dbus_connection_unexport_menu_model(self->connection, self->gio_menu_id);
         self->gio_menu_id = 0;
     }
-
     if (self->gio_action_id) {
-        g_dbus_connection_unexport_action_group(self->connection,
-                                                self->gio_action_id);
+        g_dbus_connection_unexport_action_group(self->connection, self->gio_action_id);
         self->gio_action_id = 0;
     }
+}
+
+void
+gsni_item_dbus_unexport(GsniItemDbus *self)
+{
+    g_return_if_fail(self != NULL);
+
+    clear_menu_exports(self);
 
     if (self->reg_id) {
         g_dbus_connection_unregister_object(self->connection,
@@ -360,23 +364,7 @@ gsni_item_dbus_update_menu(GsniItemDbus *self, GMenuModel *menu,
 {
     g_return_if_fail(self != NULL);
 
-    if (self->dbusmenu) {
-        gsni_dbusmenu_unexport(self->dbusmenu);
-        gsni_dbusmenu_free(self->dbusmenu);
-        self->dbusmenu = NULL;
-    }
-
-    if (self->gio_menu_id) {
-        g_dbus_connection_unexport_menu_model(self->connection,
-                                              self->gio_menu_id);
-        self->gio_menu_id = 0;
-    }
-
-    if (self->gio_action_id) {
-        g_dbus_connection_unexport_action_group(self->connection,
-                                                self->gio_action_id);
-        self->gio_action_id = 0;
-    }
+    clear_menu_exports(self);
 
     if (menu == NULL)
         return;

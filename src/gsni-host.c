@@ -200,7 +200,6 @@ gsni_host_load_existing_items(GsniHost *self)
     }
 }
 
-/* ── GObject lifecycle ──────────────────────────────────── */
 
 static void
 gsni_host_dispose(GObject *object)
@@ -242,7 +241,6 @@ gsni_host_init(GsniHost *self)
     self->items = g_list_store_new(GSNI_TYPE_HOST_ITEM);
 }
 
-/* ── public API ─────────────────────────────────────────── */
 
 GsniHost *
 gsni_host_new(GDBusConnection *connection)

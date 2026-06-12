@@ -8,12 +8,12 @@
  * system tray will show your icon.  Call gsni_item_register() when ready.
  */
 
+#include <unistd.h>
+
 #include "gsni/gsni-item.h"
 #include "gsni/gsni-pixbuf.h"
 #include "gsni-item-dbus.h"
 #include "gsni-watcher.h"
-
-#include <unistd.h>
 
 /*
  * Protocol constants.
@@ -164,7 +164,7 @@ gsni_item_get_property(GObject *object, guint prop_id,
         break;
     case PROP_CATEGORY: {
         GEnumValue *ev = g_enum_get_value(
-            g_type_class_ref(GSNI_TYPE_CATEGORY), priv->category);
+            g_type_class_peek(GSNI_TYPE_CATEGORY), priv->category);
         g_value_set_string(value, ev ? ev->value_nick : "");
         break;
     }
@@ -173,7 +173,7 @@ gsni_item_get_property(GObject *object, guint prop_id,
         break;
     case PROP_STATUS: {
         GEnumValue *ev = g_enum_get_value(
-            g_type_class_ref(GSNI_TYPE_STATUS), priv->status);
+            g_type_class_peek(GSNI_TYPE_STATUS), priv->status);
         g_value_set_string(value, ev ? ev->value_nick : "");
         break;
     }
@@ -408,7 +408,6 @@ gsni_item_init(GsniItem *self)
     priv->item_is_menu = TRUE;
 }
 
-/* --- public API --- */
 
 GsniItem *
 gsni_item_new(const gchar *id, GDBusConnection *connection, GError **error)
@@ -588,7 +587,7 @@ gsni_item_set_status(GsniItem *self, GsniStatus status)
 
     if (priv->dbus) {
         GEnumValue *ev = g_enum_get_value(
-            g_type_class_ref(GSNI_TYPE_STATUS), status);
+            g_type_class_peek(GSNI_TYPE_STATUS), status);
         GVariant *body = g_variant_new("(s)", ev ? ev->value_nick : "Passive");
         gsni_item_dbus_emit_signal(priv->dbus, "NewStatus", body);
     }
@@ -954,7 +953,6 @@ gsni_item_get_activation_token(GsniItem *self)
     return PRIV(self)->activation_token;
 }
 
-/* --- internal API (used by gsni-item-dbus and gsni-watcher) --- */
 
 GsniItemDbus *
 gsni_item_get_dbus(GsniItem *self)

@@ -1,0 +1,19 @@
+# gi-docgen configuration for libgsni
+
+[library]
+name = "gsni"
+version = @GSNI_VERSION@
+description = "StatusNotifierItem D-Bus tray icon library for GTK4"
+authors = "Jaroslav Reznik"
+license = "LGPL-2.1-or-later"
+license_url = "https://www.gnu.org/licenses/lgpl-2.1.html"
+website_url = "https://github.com/jreznik/gsni"
+repository_url = "https://github.com/jreznik/gsni.git"
+devhelp = true
+search_index = true
+
+dependencies = [
+  "Gio-2.0",
+  "GObject-2.0",
+  "GdkPixbuf-2.0",
+]

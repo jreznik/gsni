@@ -121,25 +121,29 @@ on_watcher_vanished(GDBusConnection *connection,
 }
 
 static void
+register_one_item(GsniWatcher *self, GsniItem *item, const gchar *bus_name)
+{
+    GError *error = NULL;
+    g_autoptr(GVariant) result = g_dbus_proxy_call_sync(self->proxy,
+        "RegisterStatusNotifierItem",
+        g_variant_new("(s)", bus_name ? bus_name : ""),
+        G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
+
+    if (result == NULL) {
+        g_warning("Failed to register item: %s", error->message);
+        g_clear_error(&error);
+    } else {
+        g_object_notify(G_OBJECT(item), "connected");
+    }
+}
+
+static void
 register_pending_items(GsniWatcher *self)
 {
     for (GList *l = self->items; l; l = l->next) {
         GsniItem *item = GSNI_ITEM(l->data);
         const gchar *name = g_hash_table_lookup(self->item_names, item);
-
-        GError *error = NULL;
-        GVariant *result = g_dbus_proxy_call_sync(self->proxy,
-            "RegisterStatusNotifierItem",
-            g_variant_new("(s)", name ? name : ""),
-            G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
-
-        if (result == NULL) {
-            g_warning("Failed to register item: %s", error->message);
-            g_clear_error(&error);
-        } else {
-            g_variant_unref(result);
-            g_object_notify(G_OBJECT(item), "connected");
-        }
+        register_one_item(self, item, name);
     }
 }
 
@@ -187,20 +191,8 @@ gsni_watcher_register_item(GsniWatcher *self, GsniItem *item,
     self->items = g_list_prepend(self->items, item);
     g_hash_table_insert(self->item_names, item, g_strdup(bus_name));
 
-    if (self->watcher_present) {
-        GError *error = NULL;
-        GVariant *result = g_dbus_proxy_call_sync(self->proxy,
-            "RegisterStatusNotifierItem",
-            g_variant_new("(s)", bus_name ? bus_name : ""),
-            G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
-
-        if (result == NULL) {
-            g_warning("Failed to register item: %s", error->message);
-            g_clear_error(&error);
-        } else {
-            g_variant_unref(result);
-        }
-    }
+    if (self->watcher_present)
+        register_one_item(self, item, bus_name);
 }
 
 void
