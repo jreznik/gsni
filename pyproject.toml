@@ -8,8 +8,8 @@ version = "1.0.0"
 description = "StatusNotifierItem D-Bus system tray icons for GTK4"
 readme = "README.md"
 license = { text = "LGPL-2.1-or-later" }
+license-files = ["LICENSE"]
 authors = [{ name = "Jaroslav Reznik", email = "jreznik@redhat.com" }]
-urls = { repository = "https://github.com/jreznik/gsni" }
 requires-python = ">=3.9"
 dependencies = ["pygobject"]
 classifiers = [
@@ -18,8 +18,13 @@ classifiers = [
     "License :: OSI Approved :: GNU Lesser General Public License v2 or later (LGPLv2+)",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Topic :: Desktop Environment",
 ]
+
+[project.urls]
+repository = "https://github.com/jreznik/gsni"
+issues     = "https://github.com/jreznik/gsni/issues"
 
 [tool.meson-python.args]
 setup = ["-Dtests=false", "-Dexamples=false", "-Ddocs=false"]
