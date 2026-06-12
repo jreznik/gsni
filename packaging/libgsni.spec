@@ -87,7 +87,6 @@ install -pm 0644 bindings/python/gsni/__init__.py %{buildroot}%{python3_sitelib}
 
 %files -n python3-%{name}
 %{python3_sitelib}/gsni/
-%{python3_sitelib}/gsni/__init__.py
 
 %changelog
 * Fri Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.0-1
