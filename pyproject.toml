@@ -7,7 +7,7 @@ name = "gsni"
 version = "1.0.0"
 description = "StatusNotifierItem D-Bus system tray icons for GTK4"
 readme = "README.md"
-license = { text = "LGPL-2.1-or-later" }
+license = "LGPL-2.1-or-later"
 license-files = ["LICENSE"]
 authors = [{ name = "Jaroslav Reznik", email = "jreznik@redhat.com" }]
 requires-python = ">=3.9"
