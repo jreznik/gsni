@@ -12,6 +12,7 @@ BuildRequires:  gcc
 BuildRequires:  pkgconfig(glib-2.0) >= 2.80
 BuildRequires:  pkgconfig(gdk-pixbuf-2.0) >= 2.42
 BuildRequires:  pkgconfig(gobject-introspection-1.0) >= 1.78
+BuildRequires:  python3-devel >= 3.9
 
 %description
 libgsni implements the StatusNotifierItem (SNI) D-Bus protocol
@@ -35,14 +36,25 @@ Requires:       pkgconfig(glib-2.0) >= 2.80
 %description    -n %{name}-devel
 Headers and pkg-config file for developing applications using libgsni.
 
-%package        -n gir1.2-Gsni-1
+%package        -n gir1.2-Gsni-1.0
 Summary:        GObject Introspection data for %{name}
 Requires:       %{name}1%{?_isa} = %{version}-%{release}
 BuildArch:      noarch
 
-%description    -n gir1.2-Gsni-1
+%description    -n gir1.2-Gsni-1.0
 GObject Introspection typelib for using libgsni from Python and other
 language bindings.
+
+%package        -n python3-%{name}
+Summary:        Python bindings for %{name}
+Requires:       gir1.2-Gsni-1.0 = %{version}-%{release}
+Requires:       python3-gobject
+BuildArch:      noarch
+
+%description    -n python3-%{name}
+Python wrapper for libgsni that provides an idiomatic API on top of
+the GObject Introspection bindings.  Includes a context manager for
+automatic tray icon registration and cleanup.
 
 %prep
 %autosetup -n gsni-%{version} -p1
@@ -53,6 +65,8 @@ language bindings.
 
 %install
 %meson_install
+mkdir -p %{buildroot}%{python3_sitelib}/gsni
+install -pm 0644 bindings/python/gsni/__init__.py %{buildroot}%{python3_sitelib}/gsni/
 
 %check
 %meson_test
@@ -66,10 +80,14 @@ language bindings.
 %{_includedir}/gsni/
 %{_libdir}/libgsni.so
 %{_libdir}/pkgconfig/gsni.pc
-%{_datadir}/gir-1.0/Gsni-1.gir
+%{_datadir}/gir-1.0/Gsni-1.0.gir
 
-%files -n gir1.2-Gsni-1
-%{_libdir}/girepository-1.0/Gsni-1.typelib
+%files -n gir1.2-Gsni-1.0
+%{_libdir}/girepository-1.0/Gsni-1.0.typelib
+
+%files -n python3-%{name}
+%{python3_sitelib}/gsni/
+%{python3_sitelib}/gsni/__init__.py
 
 %changelog
 * Fri Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.0-1

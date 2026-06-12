@@ -47,7 +47,7 @@ def main():
     # Create tray icon
     item = Gsni.Item.new("py-example", conn)
     item.set_title("Python Tray Demo")
-    item.set_icon_name("python")
+    item.set_icon_name("applications-other")
     item.set_status(Gsni.Status.ACTIVE)
     item.set_menu(menu)
     item.set_action_group(actions)
