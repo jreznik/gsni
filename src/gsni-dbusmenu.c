@@ -301,24 +301,22 @@ collect_item_properties(GMenuModel *model, gint position,
     if (is_separator) {
         if (property_requested("type", props, n_props))
             g_variant_builder_add(out, "{sv}", "type",
-                g_variant_new_variant(g_variant_new_string("separator")));
+                g_variant_new_string("separator"));
         if (property_requested("visible", props, n_props))
             g_variant_builder_add(out, "{sv}", "visible",
-                g_variant_new_variant(g_variant_new_boolean(TRUE)));
+                g_variant_new_boolean(TRUE));
         if (property_requested("enabled", props, n_props))
             g_variant_builder_add(out, "{sv}", "enabled",
-                g_variant_new_variant(g_variant_new_boolean(FALSE)));
+                g_variant_new_boolean(FALSE));
         return;
     }
 
     if (property_requested("type", props, n_props))
         g_variant_builder_add(out, "{sv}", "type",
-            g_variant_new_variant(g_variant_new_string("standard")));
-
+            g_variant_new_string("standard"));
     if (property_requested("visible", props, n_props))
         g_variant_builder_add(out, "{sv}", "visible",
-            g_variant_new_variant(g_variant_new_boolean(TRUE)));
-
+            g_variant_new_boolean(TRUE));
     if (property_requested("enabled", props, n_props)) {
         gboolean enabled = TRUE;
         g_autofree gchar *action_name = NULL;
@@ -340,7 +338,7 @@ collect_item_properties(GMenuModel *model, gint position,
                                                         action_name);
         }
         g_variant_builder_add(out, "{sv}", "enabled",
-            g_variant_new_variant(g_variant_new_boolean(enabled)));
+            g_variant_new_boolean(enabled));
     }
 
     if (property_requested("label", props, n_props)) {
@@ -356,14 +354,13 @@ collect_item_properties(GMenuModel *model, gint position,
         }
         g_object_unref(iter);
         g_variant_builder_add(out, "{sv}", "label",
-            g_variant_new_variant(
-                g_variant_new_string(label ? label : "")));
+            g_variant_new_string(label ? label : ""));
     }
 
     if (has_submenu && property_requested("children-display", props,
                                           n_props))
         g_variant_builder_add(out, "{sv}", "children-display",
-            g_variant_new_variant(g_variant_new_string("submenu")));
+            g_variant_new_string("submenu"));
 
     /* Check for toggle state */
     g_autofree gchar *action = NULL;
@@ -385,11 +382,11 @@ collect_item_properties(GMenuModel *model, gint position,
         if (state && g_variant_is_of_type(state, G_VARIANT_TYPE_BOOLEAN)) {
             if (property_requested("toggle-type", props, n_props))
                 g_variant_builder_add(out, "{sv}", "toggle-type",
-                    g_variant_new_variant(g_variant_new_string("checkmark")));
+                    g_variant_new_string("checkmark"));
             if (property_requested("toggle-state", props, n_props))
                 g_variant_builder_add(out, "{sv}", "toggle-state",
-                    g_variant_new_variant(g_variant_new_int32(
-                        g_variant_get_boolean(state) ? 1 : 0)));
+                    g_variant_new_int32(
+                        g_variant_get_boolean(state) ? 1 : 0));
         }
         if (state)
             g_variant_unref(state);
@@ -416,10 +413,10 @@ build_layout_recursive(GsniDBusMenu *self, GMenuModel *model,
     if (parent_id == 0) {
         if (property_requested("children-display", props, n_props))
             g_variant_builder_add(&root_dict, "{sv}", "children-display",
-                g_variant_new_variant(g_variant_new_string("submenu")));
+                g_variant_new_string("submenu"));
         if (property_requested("visible", props, n_props))
             g_variant_builder_add(&root_dict, "{sv}", "visible",
-                g_variant_new_variant(g_variant_new_boolean(TRUE)));
+                g_variant_new_boolean(TRUE));
     }
 
     /* Build children array */
