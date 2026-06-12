@@ -1,18 +1,13 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later
  * SPDX-FileCopyrightText: 2024 libgsni contributors
  *
- * GsniHost — consumes SNI items from the session bus.
- *
- * This is for building system trays.  Register a GsniHost, and it
- * watches for StatusNotifierItems and surfaces them as GsniHostItem
- * proxy objects via a GListModel.
+ * GsniHost — a StatusNotifierHost that watches for remote SNI items.
  */
 
 #ifndef GSNI_HOST_H
 #define GSNI_HOST_H
 
 #include <gio/gio.h>
-#include "gsni/gsni-enums.h"
 
 G_BEGIN_DECLS
 
@@ -24,7 +19,7 @@ GsniHost    *gsni_host_new               (GDBusConnection *connection);
 gboolean     gsni_host_register          (GsniHost   *self,
                                           GError    **error);
 void         gsni_host_unregister        (GsniHost   *self);
-
+gboolean     gsni_host_get_is_registered (GsniHost   *self);
 GListModel  *gsni_host_get_items         (GsniHost   *self);
 
 G_END_DECLS

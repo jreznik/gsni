@@ -987,6 +987,13 @@ gsni_item_get_id(GsniItem *self)
     return PRIV(self)->id;
 }
 
+const gchar *
+gsni_item_get_bus_name(GsniItem *self)
+{
+    g_return_val_if_fail(GSNI_IS_ITEM(self), NULL);
+    return PRIV(self)->bus_name;
+}
+
 void
 gsni_item_set_activation_token(GsniItem *self, const gchar *token)
 {

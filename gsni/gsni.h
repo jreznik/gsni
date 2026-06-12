@@ -12,5 +12,7 @@
 #include <gsni/gsni-types.h>
 #include <gsni/gsni-pixbuf.h>
 #include <gsni/gsni-item.h>
+#include <gsni/gsni-host.h>
+#include <gsni/gsni-host-item.h>
 
 #endif /* GSNI_H */

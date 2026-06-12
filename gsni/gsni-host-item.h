@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later
  * SPDX-FileCopyrightText: 2024 libgsni contributors
  *
- * GsniHostItem — a passive proxy for a remote StatusNotifierItem.
+ * GsniHostItem — a proxy for a remote StatusNotifierItem.
  */
 
 #ifndef GSNI_HOST_ITEM_H
@@ -17,14 +17,21 @@ G_BEGIN_DECLS
 #define GSNI_TYPE_HOST_ITEM (gsni_host_item_get_type())
 G_DECLARE_FINAL_TYPE(GsniHostItem, gsni_host_item, GSNI, HOST_ITEM, GObject)
 
-const gchar   *gsni_host_item_get_id          (GsniHostItem *self);
-const gchar   *gsni_host_item_get_title       (GsniHostItem *self);
-GsniStatus     gsni_host_item_get_status      (GsniHostItem *self);
-GsniCategory   gsni_host_item_get_category    (GsniHostItem *self);
-const gchar   *gsni_host_item_get_icon_name   (GsniHostItem *self);
-GdkPixbuf     *gsni_host_item_get_icon_pixbuf (GsniHostItem *self);
-GsniToolTip   *gsni_host_item_get_tooltip     (GsniHostItem *self);
-const gchar   *gsni_host_item_get_menu_path   (GsniHostItem *self);
+GsniHostItem  *gsni_host_item_new              (const gchar       *service,
+                                                 GDBusConnection   *connection);
+
+const gchar   *gsni_host_item_get_id            (GsniHostItem *self);
+const gchar   *gsni_host_item_get_title         (GsniHostItem *self);
+GsniStatus     gsni_host_item_get_status        (GsniHostItem *self);
+GsniCategory   gsni_host_item_get_category      (GsniHostItem *self);
+const gchar   *gsni_host_item_get_icon_name     (GsniHostItem *self);
+GdkPixbuf     *gsni_host_item_get_icon_pixbuf   (GsniHostItem *self);
+const gchar   *gsni_host_item_get_menu_path     (GsniHostItem *self);
+const gchar   *gsni_host_item_get_overlay_icon_name  (GsniHostItem *self);
+const gchar   *gsni_host_item_get_attention_icon_name(GsniHostItem *self);
+gboolean       gsni_host_item_get_item_is_menu  (GsniHostItem *self);
+const gchar   *gsni_host_item_get_service       (GsniHostItem *self);
+gint           gsni_host_item_get_window_id     (GsniHostItem *self);
 
 G_END_DECLS
 

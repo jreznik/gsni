@@ -27,3 +27,8 @@ test_watcher = executable('test-watcher', 'test-watcher.c',
   dependencies: test_deps,
 )
 test('watcher', test_watcher, env: test_env)
+
+test_conformance = executable('test-conformance', 'test-conformance.c',
+  dependencies: test_deps,
+)
+test('conformance', test_conformance, env: test_env, timeout: 30)
