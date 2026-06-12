@@ -472,7 +472,17 @@ gsni_item_register(GsniItem *self, GError **error)
             NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, &name_err);
 
         if (name_result) {
+            guint32 result_code;
+            g_variant_get(name_result, "(u)", &result_code);
             g_variant_unref(name_result);
+            if (result_code != 1) {
+                g_warning("Name %s not acquired (code %u); "
+                          "using unique name instead",
+                          priv->bus_name, result_code);
+                g_free(priv->bus_name);
+                priv->bus_name = g_strdup(
+                    g_dbus_connection_get_unique_name(priv->connection));
+            }
         } else {
             g_warning("Failed to request name %s: %s", priv->bus_name,
                       name_err->message);
