@@ -41,6 +41,8 @@ static const gchar *track_list[] = {
 };
 
 static void rebuild_menu(AppData *app);
+static gboolean rebuild_menu_idle(gpointer data);
+static void rebuild_menu_deferred(AppData *app);
 
 static void
 transition_state(AppData *app, PlaybackState new_state)
@@ -64,6 +66,7 @@ transition_state(AppData *app, PlaybackState new_state)
         gsni_item_set_title(app->item, new_state == STATE_PLAYING
             ? "▶ Now Playing" : "⏸ Music Controller");
         rebuild_menu(app);
+        rebuild_menu_deferred(app);
     }
 }
 
@@ -104,6 +107,7 @@ on_next(GSimpleAction *action, GVariant *param, gpointer data)
     if (app->state == STATE_PLAYING)
         gsni_item_set_title(app->item, "▶ Now Playing");
     rebuild_menu(app);
+    rebuild_menu_deferred(app);
 }
 
 static void
@@ -123,6 +127,7 @@ on_previous(GSimpleAction *action, GVariant *param, gpointer data)
     if (app->state == STATE_PLAYING)
         gsni_item_set_title(app->item, "▶ Now Playing");
     rebuild_menu(app);
+    rebuild_menu_deferred(app);
 }
 
 static void
@@ -257,7 +262,6 @@ rebuild_menu(AppData *app)
     g_object_unref(empty4);
 
     g_menu_append(app->menu, "❌ Quit", "quit");
-    gsni_item_set_menu(app->item, G_MENU_MODEL(app->menu));
 }
 
 static gboolean
@@ -298,6 +302,20 @@ on_stdin(GIOChannel *channel, GIOCondition cond, gpointer data)
 
     g_free(line);
     return TRUE;
+}
+
+static gboolean
+rebuild_menu_idle(gpointer data)
+{
+    AppData *app = data;
+    gsni_item_set_menu(app->item, G_MENU_MODEL(app->menu));
+    return G_SOURCE_REMOVE;
+}
+
+void
+rebuild_menu_deferred(AppData *app)
+{
+    g_idle_add(rebuild_menu_idle, app);
 }
 
 int
