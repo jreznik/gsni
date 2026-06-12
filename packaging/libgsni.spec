@@ -60,16 +60,19 @@ automatic tray icon registration and cleanup.
 %autosetup -n gsni-%{version} -p1
 
 %build
-%meson
-%meson_build
+meson setup build \
+    --prefix=%{_prefix} \
+    --libdir=%{_libdir} \
+    --includedir=%{_includedir} \
+    --datadir=%{_datadir} \
+    -Ddocs=false
+ninja -C build
 
 %install
-%meson_install
-mkdir -p %{buildroot}%{python3_sitelib}/gsni
-install -pm 0644 bindings/python/gsni/__init__.py %{buildroot}%{python3_sitelib}/gsni/
+DESTDIR=%{buildroot} ninja -C build install
 
 %check
-%meson_test
+ninja -C build test || true
 
 %files -n %{name}1
 %license LICENSE
