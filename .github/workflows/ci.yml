@@ -103,4 +103,4 @@ jobs:
         run: dpkg-buildpackage -us -uc -b
 
       - name: Show DEB contents
-        run: find / -name '*.deb' -path '*/gsni*' 2>/dev/null || find ~ -name '*.deb' 2>/dev/null || echo "No .deb files found"
+        run: ls -la /home/runner/work/gsni/*.deb
