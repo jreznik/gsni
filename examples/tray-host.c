@@ -50,12 +50,13 @@ fetch_menu_layout(const gchar *bus_name, const gchar *menu_path)
 static void
 trigger_menu_event(const gchar *bus_name, const gchar *menu_path, gint id)
 {
+    if (!bus_name || !bus_name[0] || !menu_path) return;
     GDBusConnection *conn = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
     if (!conn) return;
     g_dbus_connection_call_sync(conn, bus_name, menu_path,
         "com.canonical.dbusmenu", "Event",
         g_variant_new("(i&s@vu)", id, "clicked",
-                      g_variant_new_string(""), 0U),
+                      g_variant_new_variant(g_variant_new_string("")), 0U),
         NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL);
     g_object_unref(conn);
 }
@@ -63,10 +64,19 @@ trigger_menu_event(const gchar *bus_name, const gchar *menu_path, gint id)
 /* ── Custom popover menu built from DBusMenu layout ────────── */
 
 typedef struct {
-    const gchar *bus_name;
-    const gchar *menu_path;
+    gchar       *bus_name;
+    gchar       *menu_path;
     gint         item_id;
 } MenuCallbackData;
+
+static void
+menu_callback_data_free(gpointer data)
+{
+    MenuCallbackData *mcd = data;
+    g_free(mcd->bus_name);
+    g_free(mcd->menu_path);
+    g_free(mcd);
+}
 
 static void
 on_popover_item_clicked(GtkGestureClick *gesture, gint np, gdouble x, gdouble y,
@@ -92,15 +102,15 @@ add_menu_item_to_box(GtkBox *box, const gchar *label, gboolean enabled,
     gtk_button_set_has_frame(GTK_BUTTON(btn), FALSE);
 
     MenuCallbackData *mcd = g_new(MenuCallbackData, 1);
-    mcd->bus_name = bus_name;
-    mcd->menu_path = menu_path;
+    mcd->bus_name = g_strdup(bus_name);
+    mcd->menu_path = g_strdup(menu_path);
     mcd->item_id = item_id;
 
     GtkGesture *click = gtk_gesture_click_new();
     g_object_set_data(G_OBJECT(click), "popover", popover);
     g_signal_connect_data(click, "pressed",
                           G_CALLBACK(on_popover_item_clicked), mcd,
-                          (GClosureNotify)g_free, 0);
+                          (GClosureNotify)menu_callback_data_free, 0);
     gtk_widget_add_controller(btn, GTK_EVENT_CONTROLLER(click));
 
     gtk_box_append(box, btn);
