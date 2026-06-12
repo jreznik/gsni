@@ -33,6 +33,7 @@ jobs:
       - name: Python tests
         run: |
           GI_TYPELIB_PATH=build/src LD_LIBRARY_PATH=build/src \
+            PYTHONPATH=bindings/python \
             python3 -m pytest bindings/python/tests/ -v
 
       - name: Build source distribution
