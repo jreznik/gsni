@@ -3,4 +3,10 @@
 	dh $@ --buildsystem=meson
 
 override_dh_auto_configure:
-	dh_auto_configure -- -Ddocs=false -Dtests=false
+	dh_auto_configure -- -Ddocs=false -Dtests=false -Dexamples=false
+
+override_dh_auto_install:
+	DESTDIR=$$(pwd)/debian/tmp ninja -C build install
+
+override_dh_missing:
+	dh_missing --fail-missing
