@@ -100,6 +100,11 @@ ninja -C build test || true
 %{python3_sitelib}/gsni/
 
 %changelog
+* Fri Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.2-1
+- Python bindings parity: full property access, Host wrappers, tests
+- RPM/DEB version sync with meson.build
+- Papercuts: tooltip getter GI annotation, CI version bumps
+
 * Fri Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.1-1
 - Python bindings documentation and examples
 - PyPI compliance updates

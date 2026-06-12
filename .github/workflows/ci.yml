@@ -62,7 +62,7 @@ jobs:
 
       - name: Create source tarball
         run: |
-          VERSION=1.0.0
+          VERSION=1.0.2
           mkdir -p ~/rpmbuild/{SOURCES,SPECS}
           tar czf ~/rpmbuild/SOURCES/gsni-${VERSION}.tar.gz \
             --transform "s|^\\.|gsni-${VERSION}|" \
@@ -96,8 +96,8 @@ jobs:
 
       - name: Create changelog
         run: |
-          echo "libgsni (1.0.0-1) unstable; urgency=medium" > debian/changelog
-          echo "  * Initial release" >> debian/changelog
+          echo "libgsni (1.0.2-1) unstable; urgency=medium" > debian/changelog
+          echo "  * Release 1.0.2" >> debian/changelog
           echo " -- Jaroslav Reznik <jreznik@redhat.com>  $(date -R)" >> debian/changelog
 
       - name: Build DEB
