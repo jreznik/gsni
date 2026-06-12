@@ -1,19 +1,17 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["meson-python>=0.15", "meson>=1.0"]
+build-backend = "mesonpy"
 
 [project]
 name = "gsni"
 version = "1.0.0"
-description = "StatusNotifierItem D-Bus system tray icons — Python bindings for libgsni"
+description = "StatusNotifierItem D-Bus system tray icons for GTK4"
 readme = "README.md"
 license = { text = "LGPL-2.1-or-later" }
 authors = [{ name = "Jaroslav Reznik", email = "jreznik@redhat.com" }]
 urls = { repository = "https://github.com/jreznik/gsni" }
 requires-python = ">=3.9"
-dependencies = [
-    "pygobject",
-]
+dependencies = ["pygobject"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -23,8 +21,5 @@ classifiers = [
     "Topic :: Desktop Environment",
 ]
 
-[tool.setuptools]
-packages = ["gsni"]
-
-[tool.setuptools.package-dir]
-"gsni" = "gsni"
+[tool.meson-python.args]
+setup = ["-Dtests=false", "-Dexamples=false", "-Ddocs=false"]
