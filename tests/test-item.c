@@ -30,7 +30,7 @@ test_item_defaults(void)
     g_assert_cmpint(gsni_item_get_category(item), ==, GSNI_CATEGORY_APPLICATION_STATUS);
     g_assert_null(gsni_item_get_title(item));
     g_assert_null(gsni_item_get_icon_name(item));
-    g_assert_false(gsni_item_get_item_is_menu(item));
+    g_assert_true(gsni_item_get_item_is_menu(item));
     g_assert_false(gsni_item_get_connected(item));
     g_assert_cmpint(gsni_item_get_window_id(item), ==, 0);
 
