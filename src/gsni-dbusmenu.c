@@ -301,12 +301,6 @@ collect_item_properties(GMenuModel *model, gint position,
         if (property_requested("type", props, n_props))
             g_variant_builder_add(out, "{sv}", "type",
                 g_variant_new_string("separator"));
-        if (property_requested("visible", props, n_props))
-            g_variant_builder_add(out, "{sv}", "visible",
-                g_variant_new_boolean(TRUE));
-        if (property_requested("enabled", props, n_props))
-            g_variant_builder_add(out, "{sv}", "enabled",
-                g_variant_new_boolean(FALSE));
         return;
     }
 
