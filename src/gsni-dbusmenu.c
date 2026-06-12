@@ -115,6 +115,10 @@ static GVariant *build_layout_recursive(GsniDBusMenu *self,
                                         const gchar *const *props,
                                         guint n_props,
                                         gboolean root_section);
+static gboolean
+find_item_by_position(GMenuModel *model, gint target_pos,
+                      gint *current_index,
+                      GMenuModel **out_model, gint *out_index);
 static void
 schedule_layout_update(GsniDBusMenu *self);
 
@@ -177,11 +181,14 @@ dbusmenu_method_call(GDBusConnection       *connection,
         if (g_str_equal(event_id, "clicked") && self->action_group &&
             id > 0) {
             gint pos = decode_position((guint32)id);
-            GMenuModel *target_model = self->menu_model;
+            gint current_index = 0;
+            g_autoptr(GMenuModel) target_model = NULL;
+            gint target_index = -1;
 
-            if (pos >= 0 && pos < g_menu_model_get_n_items(target_model)) {
+            if (find_item_by_position(self->menu_model, pos, &current_index,
+                                      &target_model, &target_index)) {
                 GMenuAttributeIter *iter =
-                    g_menu_model_iterate_item_attributes(target_model, pos);
+                    g_menu_model_iterate_item_attributes(target_model, target_index);
                 const gchar *attr;
                 GVariant *val;
                 g_autofree gchar *action_name = NULL;
@@ -379,10 +386,143 @@ collect_item_properties(GMenuModel *model, gint position,
             if (property_requested("toggle-state", props, n_props))
                 g_variant_builder_add(out, "{sv}", "toggle-state",
                     g_variant_new_int32(
-                        g_variant_get_boolean(state) ? 1 : 0));
+                g_variant_get_boolean(state) ? 1 : 0));
         }
         if (state)
             g_variant_unref(state);
+    }
+}
+
+/*
+ * Recursively find a menu item by its flat position.
+ */
+static gboolean
+find_item_by_position(GMenuModel *model, gint target_pos,
+                      gint *current_index,
+                      GMenuModel **out_model, gint *out_index)
+{
+    gint n_items = g_menu_model_get_n_items(model);
+
+    for (gint i = 0; i < n_items; i++) {
+        GMenuModel *section = g_menu_model_get_item_link(model, i,
+            G_MENU_LINK_SECTION);
+
+        if (section) {
+            /* If we insert a separator between sections */
+            if (*current_index > 0) {
+                if (*current_index == target_pos) {
+                    g_object_unref(section);
+                    return FALSE; /* Separator has no action */
+                }
+                (*current_index)++;
+            }
+
+            gboolean found = find_item_by_position(section, target_pos,
+                current_index, out_model, out_index);
+            g_object_unref(section);
+            if (found)
+                return TRUE;
+            continue;
+        }
+
+        if (*current_index == target_pos) {
+            *out_model = g_object_ref(model);
+            *out_index = i;
+            return TRUE;
+        }
+        (*current_index)++;
+    }
+
+    return FALSE;
+}
+
+static void
+build_layout_helper(GsniDBusMenu *self, GMenuModel *model,
+                    guint32 parent_id, gint recurrence,
+                    const gchar *const *props, guint n_props,
+                    GVariantBuilder *children_arr, gint *child_index)
+{
+    gint n_items = g_menu_model_get_n_items(model);
+    gint child_recurse = (recurrence > 0) ? recurrence - 1 : -1;
+
+    for (gint i = 0; i < n_items; i++) {
+        GMenuModel *section = g_menu_model_get_item_link(model, i,
+            G_MENU_LINK_SECTION);
+
+        if (section) {
+            /* Insert separator between sections */
+            if (*child_index > 0) {
+                GVariantBuilder sep_dict;
+                g_variant_builder_init(&sep_dict, G_VARIANT_TYPE("a{sv}"));
+                collect_item_properties(NULL, -1, NULL,
+                                        props, n_props, TRUE, FALSE,
+                                        &sep_dict);
+                GVariant *sep_props = g_variant_builder_end(&sep_dict);
+                g_variant_ref_sink(sep_props);
+
+                GVariantBuilder sep_node;
+                g_variant_builder_init(&sep_node, G_VARIANT_TYPE("(ia{sv}av)"));
+                g_variant_builder_add(&sep_node, "i", encode_id(parent_id, *child_index));
+                g_variant_builder_add_value(&sep_node, sep_props);
+                g_variant_builder_add(&sep_node, "av", NULL);
+                g_variant_unref(sep_props);
+
+                GVariant *sep_var = g_variant_builder_end(&sep_node);
+                g_variant_ref_sink(sep_var);
+                GVariant *sep_wrapped = g_variant_new_variant(sep_var);
+                g_variant_builder_add_value(children_arr, sep_wrapped);
+                g_variant_unref(sep_var);
+                (*child_index)++;
+            }
+
+            /* Recurse into section – items become children (flattened) */
+            build_layout_helper(self, section, parent_id, child_recurse,
+                                props, n_props, children_arr, child_index);
+            g_object_unref(section);
+            continue;
+        }
+
+        GMenuModel *submenu = g_menu_model_get_item_link(model, i,
+            G_MENU_LINK_SUBMENU);
+        guint32 child_id = encode_id(parent_id, *child_index);
+
+        GVariantBuilder item_dict;
+        collect_item_properties(model, i, self->action_group,
+                                props, n_props, FALSE,
+                                submenu != NULL, &item_dict);
+        GVariant *item_props = g_variant_builder_end(&item_dict);
+        g_variant_ref_sink(item_props);
+
+        GVariantBuilder node;
+        g_variant_builder_init(&node, G_VARIANT_TYPE("(ia{sv}av)"));
+        g_variant_builder_add(&node, "i", child_id);
+        g_variant_builder_add_value(&node, item_props);
+        g_variant_unref(item_props);
+
+        if (submenu) {
+            GVariant *sub_children = build_layout_recursive(self, submenu,
+                child_id, child_recurse, props, n_props, FALSE);
+            g_object_unref(submenu);
+
+            if (sub_children) {
+                GVariant *sc = g_variant_get_child_value(sub_children, 2);
+                g_variant_ref_sink(sc);
+                g_variant_builder_add_value(&node, sc);
+                g_variant_unref(sc);
+                g_variant_unref(sub_children);
+            } else {
+                g_variant_builder_add(&node, "av", NULL);
+            }
+        } else {
+            g_variant_builder_add(&node, "av", NULL);
+        }
+
+        GVariant *node_var = g_variant_builder_end(&node);
+        g_variant_ref_sink(node_var);
+        GVariant *wrapped = g_variant_new_variant(node_var);
+        g_variant_builder_add_value(children_arr, wrapped);
+        g_variant_unref(node_var);
+        (*child_index)++;
     }
 }
 
@@ -395,8 +535,6 @@ build_layout_recursive(GsniDBusMenu *self, GMenuModel *model,
                        const gchar *const *props, guint n_props,
                        gboolean root_section)
 {
-    gint n_items = g_menu_model_get_n_items(model);
-    GVariant *sub_children = NULL;
     GVariant *result = NULL;
 
     /* Root node properties */
@@ -416,105 +554,10 @@ build_layout_recursive(GsniDBusMenu *self, GMenuModel *model,
     GVariantBuilder children_arr;
     g_variant_builder_init(&children_arr, G_VARIANT_TYPE("av"));
 
-    if (recurrence != 0 && n_items > 0) {
-        gint child_recurse = (recurrence > 0) ? recurrence - 1 : -1;
+    if (recurrence != 0) {
         gint child_index = 0;
-
-        for (gint i = 0; i < n_items; i++) {
-            GMenuModel *section = g_menu_model_get_item_link(model, i,
-                G_MENU_LINK_SECTION);
-
-            if (section) {
-                /* Insert separator between sections */
-                if (child_index > 0) {
-                    GVariantBuilder sep_dict;
-                    g_variant_builder_init(&sep_dict, G_VARIANT_TYPE("a{sv}"));
-                    collect_item_properties(NULL, -1, NULL,
-                                            props, n_props, TRUE, FALSE,
-                                            &sep_dict);
-                    GVariant *sep_props = g_variant_builder_end(&sep_dict);
-                    g_variant_ref_sink(sep_props);
-
-                    GVariantBuilder sep_node;
-                    g_variant_builder_init(&sep_node, G_VARIANT_TYPE("(ia{sv}av)"));
-                    g_variant_builder_add(&sep_node, "i", encode_id(parent_id, child_index));
-                    g_variant_builder_add_value(&sep_node, sep_props);
-                    g_variant_builder_add(&sep_node, "av", NULL);
-                    g_variant_unref(sep_props);
-
-                    GVariant *sep_var = g_variant_builder_end(&sep_node);
-                    g_variant_ref_sink(sep_var);
-                    GVariant *sep_wrapped = g_variant_new_variant(sep_var);
-                    g_variant_builder_add_value(&children_arr, sep_wrapped);
-                    g_variant_unref(sep_var);
-                    child_index++;
-                }
-
-                /* Recurse into section – items become children (flattened) */
-                g_autoptr(GVariant) sec_layout = build_layout_recursive(
-                    self, section, encode_id(parent_id, child_index),
-                    child_recurse, props, n_props, FALSE);
-                g_object_unref(section);
-
-                if (sec_layout) {
-                    GVariant *sec_children = g_variant_get_child_value(sec_layout, 2);
-                    g_variant_ref_sink(sec_children);
-                    guint sec_n = g_variant_n_children(sec_children);
-                    for (guint j = 0; j < sec_n; j++) {
-                        GVariant *child = g_variant_get_child_value(sec_children, j);
-                        g_variant_builder_add_value(&children_arr, child);
-                        g_variant_unref(child);
-                    }
-                    g_variant_unref(sec_children);
-                    child_index += (gint)sec_n;
-                }
-
-                continue;
-            }
-
-            GMenuModel *submenu = g_menu_model_get_item_link(model, i,
-                G_MENU_LINK_SUBMENU);
-            guint32 child_id = encode_id(parent_id, child_index);
-
-            GVariantBuilder item_dict;
-            collect_item_properties(model, i, self->action_group,
-                                    props, n_props, FALSE,
-                                    submenu != NULL, &item_dict);
-            GVariant *item_props = g_variant_builder_end(&item_dict);
-            g_variant_ref_sink(item_props);
-
-            GVariantBuilder node;
-            g_variant_builder_init(&node, G_VARIANT_TYPE("(ia{sv}av)"));
-            g_variant_builder_add(&node, "i", child_id);
-            g_variant_builder_add_value(&node, item_props);
-            g_variant_unref(item_props);
-
-            if (submenu) {
-                sub_children = build_layout_recursive(self, submenu,
-                    child_id, child_recurse, props, n_props, FALSE);
-                g_object_unref(submenu);
-
-                if (sub_children) {
-                    GVariant *sc = g_variant_get_child_value(sub_children, 2);
-                    g_variant_ref_sink(sc);
-                    g_variant_builder_add_value(&node, sc);
-                    g_variant_unref(sc);
-                    g_variant_unref(sub_children);
-                } else {
-                    g_variant_builder_add(&node, "av", NULL);
-                }
-                sub_children = NULL;
-            } else {
-                g_variant_builder_add(&node, "av", NULL);
-            }
-
-            GVariant *node_var = g_variant_builder_end(&node);
-            g_variant_ref_sink(node_var);
-            GVariant *wrapped = g_variant_new_variant(node_var);
-            g_variant_builder_add_value(&children_arr, wrapped);
-            g_variant_unref(node_var);
-            child_index++;
-        }
+        build_layout_helper(self, model, parent_id, recurrence,
+                            props, n_props, &children_arr, &child_index);
     }
 
     GVariant *children = g_variant_builder_end(&children_arr);

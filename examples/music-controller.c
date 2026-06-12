@@ -203,9 +203,11 @@ rebuild_menu(AppData *app)
         break;
     }
 
-    GMenuItem *sep = g_menu_item_new_section(NULL, NULL);
+    GMenu *empty = g_menu_new();
+    GMenuItem *sep = g_menu_item_new_section(NULL, G_MENU_MODEL(empty));
     g_menu_append_item(app->menu, sep);
     g_object_unref(sep);
+    g_object_unref(empty);
 
     /* Track info */
     gchar *track_label = g_strdup_printf("🎵 %s", app->track_title);
