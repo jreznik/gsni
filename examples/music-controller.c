@@ -214,9 +214,11 @@ rebuild_menu(AppData *app)
     g_menu_append(app->menu, track_label, NULL);
     g_free(track_label);
 
-    GMenuItem *sep2 = g_menu_item_new_section(NULL, NULL);
+    GMenu *empty2 = g_menu_new();
+    GMenuItem *sep2 = g_menu_item_new_section(NULL, G_MENU_MODEL(empty2));
     g_menu_append_item(app->menu, sep2);
     g_object_unref(sep2);
+    g_object_unref(empty2);
 
     /* Toggles */
     GMenuItem *shuffle = g_menu_item_new("🔀 Shuffle", "shuffle");
@@ -227,9 +229,11 @@ rebuild_menu(AppData *app)
     g_menu_append_item(app->menu, repeat);
     g_object_unref(repeat);
 
-    GMenuItem *sep3 = g_menu_item_new_section(NULL, NULL);
+    GMenu *empty3 = g_menu_new();
+    GMenuItem *sep3 = g_menu_item_new_section(NULL, G_MENU_MODEL(empty3));
     g_menu_append_item(app->menu, sep3);
     g_object_unref(sep3);
+    g_object_unref(empty3);
 
     /* Radio group */
     GMenu *radio_menu = g_menu_new();
@@ -246,9 +250,11 @@ rebuild_menu(AppData *app)
     g_menu_append_submenu(app->menu, "⚙ Quality", G_MENU_MODEL(radio_menu));
     g_object_unref(radio_menu);
 
-    GMenuItem *sep4 = g_menu_item_new_section(NULL, NULL);
+    GMenu *empty4 = g_menu_new();
+    GMenuItem *sep4 = g_menu_item_new_section(NULL, G_MENU_MODEL(empty4));
     g_menu_append_item(app->menu, sep4);
     g_object_unref(sep4);
+    g_object_unref(empty4);
 
     g_menu_append(app->menu, "❌ Quit", "quit");
 }
