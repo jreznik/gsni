@@ -18,6 +18,7 @@ libgsni implements the StatusNotifierItem (SNI) D-Bus protocol
 for GTK4 applications.  It provides GsniItem for creating tray
 icons with menus, tooltips, and scroll events, and GsniHost for
 consuming SNI items in custom system trays.
+Written by Jaroslav Reznik <jreznik@redhat.com>.
 
 %package        -n %{name}1
 Summary:        Runtime library for %{name}
@@ -69,5 +70,5 @@ language bindings.
 %{_libdir}/girepository-1.0/Gsni-1.0.typelib
 
 %changelog
-* Thu Jun 12 2026 libgsni contributors - 1.0.0-1
+* Thu Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.0-1
 - Initial release

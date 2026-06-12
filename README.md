@@ -65,8 +65,9 @@ sudo ninja -C build install
 
 ## Documentation
 
-API reference and tutorials at: https://example.com/libgsni/docs
+API reference and examples at: https://github.com/jreznik/gsni
 
 ## License
 
 LGPL-2.1-or-later
+Copyright (C) 2024 Jaroslav Reznik &lt;jreznik@redhat.com&gt;
