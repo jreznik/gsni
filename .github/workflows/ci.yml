@@ -43,7 +43,7 @@ jobs:
       - name: Upload distribution
         uses: actions/upload-artifact@v4
         with:
-          name: gsni-1.0.1
+          name: gsni-1.0.2
           path: dist/*.tar.gz
 
   rpm:

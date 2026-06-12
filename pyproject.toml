@@ -4,7 +4,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "gsni"
-version = "1.0.1"
+version = "1.0.2"
 description = "StatusNotifierItem D-Bus system tray icons for GTK4"
 readme = "README.md"
 license = "LGPL-2.1-or-later"
