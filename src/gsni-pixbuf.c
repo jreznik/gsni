@@ -169,7 +169,10 @@ gsni_dbus_image_to_pixbuf(GVariant *variant)
         for (gint row = 0; row < height; row++) {
             gsize src_row = (gsize)row * width * 4;
             gsize dst_row = (gsize)row * rowstride;
-            gsize to_copy = MIN((gsize)(width * 4), data_len - src_row);
+            if (src_row >= data_len)
+                break;
+            gsize remaining = data_len - src_row;
+            gsize to_copy = MIN((gsize)(width * 4), remaining);
             if (to_copy > 0)
                 memcpy(gdk_pixbuf_get_pixels(pixbuf) + dst_row,
                        copy + src_row, to_copy);

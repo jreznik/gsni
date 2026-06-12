@@ -250,6 +250,11 @@ gsni_host_new(GDBusConnection *connection)
     GsniHost *self = g_object_new(GSNI_TYPE_HOST, NULL);
     self->connection = connection ? g_object_ref(connection)
                      : g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
+    if (self->connection == NULL) {
+        g_warning("GsniHost: no session bus available");
+        g_object_unref(self);
+        return NULL;
+    }
 
     /* Generate a well-known name for our host */
     self->host_name = g_strdup_printf("org.libgsni.Host-%u-%d",

@@ -97,6 +97,11 @@ gsni_host_item_load_properties(GsniHostItem *self)
     g_autoptr(GVariant) inner = g_variant_get_child_value(result, 0);
     g_variant_unref(result);
 
+    if (inner == NULL) {
+        g_warning("GsniHostItem: GetAll reply has unexpected structure");
+        return;
+    }
+
     {
         GVariantIter iter;
         g_variant_iter_init(&iter, inner);
@@ -196,11 +201,11 @@ gsni_host_item_finalize(GObject *object)
     g_free(self->menu_path);
     g_free(self->overlay_icon_name);
     g_free(self->attention_icon_name);
-    g_clear_object(&self->connection);
     if (self->props_changed_sig) {
         g_dbus_connection_signal_unsubscribe(self->connection, self->props_changed_sig);
         self->props_changed_sig = 0;
     }
+    g_clear_object(&self->connection);
     G_OBJECT_CLASS(gsni_host_item_parent_class)->finalize(object);
 }
 

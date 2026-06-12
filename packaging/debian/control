@@ -1,0 +1,36 @@
+Source: libgsni
+Section: libs
+Priority: optional
+Maintainer: libgsni contributors
+Build-Depends: debhelper-compat (= 13),
+               meson (>= 1.0),
+               gcc,
+               libglib2.0-dev (>= 2.80),
+               libgdk-pixbuf-2.0-dev (>= 2.42),
+               libgirepository1.0-dev (>= 1.78)
+Standards-Version: 4.6.2
+Homepage: https://github.com/jreznik/gsni
+Vcs-Git: https://github.com/jreznik/gsni.git
+Vcs-Browser: https://github.com/jreznik/gsni
+
+Package: libgsni1
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: StatusNotifierItem D-Bus tray icon library (runtime)
+ libgsni implements the StatusNotifierItem (SNI) D-Bus protocol
+ for GTK4 applications, providing system tray icons with menus,
+ tooltips and scroll events.
+
+Package: libgsni-dev
+Architecture: any
+Section: libdevel
+Depends: libgsni1 (= ${binary:Version}), ${misc:Depends},
+         libglib2.0-dev (>= 2.80)
+Description: StatusNotifierItem D-Bus tray icon library (development)
+ Headers and pkg-config file for developing applications using libgsni.
+
+Package: gir1.2-gsni-1.0
+Architecture: any
+Depends: libgsni1 (= ${binary:Version}), ${misc:Depends}
+Description: GObject Introspection data for libgsni
+ Typelib for using libgsni from Python and other language bindings.

@@ -106,13 +106,10 @@ gsni_item_constructed(GObject *object)
 
     if (priv->connection == NULL)
         priv->connection = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, NULL);
-
-    if (priv->connection)
+    else
         g_object_ref(priv->connection);
 
-    {
-        priv->object_path = g_strdup("/StatusNotifierItem");
-    }
+    priv->object_path = g_strdup("/StatusNotifierItem");
 }
 
 static void

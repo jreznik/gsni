@@ -49,7 +49,16 @@ struct _GsniWatcher {
     gboolean         watcher_present;
 };
 
+static void watcher_free(gpointer data);
 static void register_pending_items(GsniWatcher *self);
+
+static void
+watcher_free(gpointer data)
+{
+    GsniWatcher *w = data;
+    g_hash_table_unref(w->item_names);
+    g_free(w);
+}
 
 static void
 on_watcher_appeared(GDBusConnection *connection,
@@ -148,7 +157,8 @@ gsni_watcher_get_for_connection(GDBusConnection *connection)
 
     w = g_new0(GsniWatcher, 1);
     w->connection = connection;
-    w->item_names = g_hash_table_new(g_direct_hash, g_direct_equal);
+    w->item_names = g_hash_table_new_full(g_direct_hash, g_direct_equal,
+                                          NULL, g_free);
 
     w->watch_id = g_bus_watch_name_on_connection(connection,
         GSNI_WATCHER_NAME,
@@ -158,7 +168,7 @@ gsni_watcher_get_for_connection(GDBusConnection *connection)
         w, NULL);
 
     g_object_set_qdata_full(G_OBJECT(connection), watcher_quark, w,
-                            g_free);
+                            watcher_free);
 
     return w;
 }
@@ -200,4 +210,5 @@ gsni_watcher_unregister_item(GsniWatcher *self, GsniItem *item)
     g_return_if_fail(GSNI_IS_ITEM(item));
 
     self->items = g_list_remove(self->items, item);
+    g_hash_table_remove(self->item_names, item);
 }

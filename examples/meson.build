@@ -13,6 +13,10 @@ example_menu = executable('menu-item', 'menu-item.c',
   dependencies: example_deps,
 )
 
+example_music = executable('music-controller', 'music-controller.c',
+  dependencies: example_deps,
+)
+
 gtk4_dep = dependency('gtk4', required: false)
 if gtk4_dep.found()
   tray_host_deps = example_deps + [gtk4_dep]

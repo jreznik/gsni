@@ -23,10 +23,13 @@ add_project_arguments(
     '-Wno-missing-field-initializers',
     '-Wno-cast-function-type',
     '-fstack-protector-strong',
-    '-D_FORTIFY_SOURCE=2',
   ]),
   language: 'c',
 )
+
+if get_option('optimization') != '0'
+  add_project_arguments('-D_FORTIFY_SOURCE=2', language: 'c')
+endif
 
 add_project_link_arguments(
   cc.get_supported_link_arguments([
