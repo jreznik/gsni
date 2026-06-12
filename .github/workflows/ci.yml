@@ -41,22 +41,17 @@ jobs:
 
   rpm:
     runs-on: ubuntu-latest
+    container: fedora:latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install RPM tools
+      - name: Install RPM build tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y rpm
-
-      - name: Install build dependencies
-        run: |
-          sudo apt-get install -y \
-            meson ninja-build \
-            libglib2.0-dev \
-            libgdk-pixbuf-2.0-dev \
-            libgirepository1.0-dev \
-            python3-dev
+          dnf install -y \
+            rpm-build rpmdevtools meson gcc \
+            glib2-devel gdk-pixbuf2-devel \
+            gobject-introspection-devel \
+            python3-devel git
 
       - name: Create source tarball
         run: |
@@ -68,7 +63,7 @@ jobs:
       - name: Build RPM
         run: |
           cp packaging/libgsni.spec ~/rpmbuild/SPECS/
-          rpmbuild -ba --nodeps ~/rpmbuild/SPECS/libgsni.spec
+          rpmbuild -ba ~/rpmbuild/SPECS/libgsni.spec
 
       - name: Show RPM contents
         run: find ~/rpmbuild/RPMS ~/rpmbuild/SRPMS -name '*.rpm' -exec basename {} \;
