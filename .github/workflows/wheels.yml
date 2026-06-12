@@ -20,28 +20,15 @@ jobs:
             libgdk-pixbuf-2.0-dev \
             libgirepository1.0-dev \
             meson \
-            ninja-build \
-            patchelf
+            ninja-build
 
-      - name: Build C library
+      - name: Build wheel with meson-python
         run: |
-          meson setup build -Dprefix=/usr -Dtests=false -Dexamples=false -Ddocs=false
-          ninja -C build
-
-      - name: Build Python wheel
-        run: |
-          python3 -m pip install build
+          python3 -m pip install build meson-python
           python3 -m build --wheel
 
-      - name: Bundle shared library with auditwheel
-        run: |
-          python3 -m pip install auditwheel
-          auditwheel repair dist/gsni-*.whl \
-            --plat manylinux_2_28_x86_64 \
-            -w wheelhouse/
-
-      - name: Upload wheels as artifact
+      - name: Upload wheel as artifact
         uses: actions/upload-artifact@v4
         with:
           name: wheels
-          path: wheelhouse/*.whl
+          path: dist/*.whl
