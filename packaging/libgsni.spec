@@ -66,9 +66,10 @@ language bindings.
 %{_includedir}/gsni/
 %{_libdir}/libgsni.so
 %{_libdir}/pkgconfig/gsni.pc
+%{_datadir}/gir-1.0/Gsni-1.gir
 
 %files -n gir1.2-gsni-1.0
-%{_libdir}/girepository-1.0/Gsni-1.0.typelib
+%{_libdir}/girepository-1.0/Gsni-1.typelib
 
 %changelog
 * Fri Jun 12 2026 Jaroslav Reznik <jreznik@redhat.com> - 1.0.0-1
