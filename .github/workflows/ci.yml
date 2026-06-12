@@ -51,14 +51,17 @@ jobs:
             rpm-build rpmdevtools meson gcc \
             glib2-devel gdk-pixbuf2-devel \
             gobject-introspection-devel \
-            python3-devel git
+            python3-devel git xz
 
       - name: Create source tarball
         run: |
           VERSION=1.0.0
           mkdir -p ~/rpmbuild/{SOURCES,SPECS}
+          git config --global --add safe.directory "$PWD"
           git archive --format=tar --prefix=gsni-${VERSION}/ HEAD \
-            | xz > ~/rpmbuild/SOURCES/gsni-${VERSION}.tar.xz
+            | xz -z > ~/rpmbuild/SOURCES/gsni-${VERSION}.tar.xz
+          echo "Tarball size: $(stat -c%s ~/rpmbuild/SOURCES/gsni-${VERSION}.tar.xz) bytes"
+          tar tJf ~/rpmbuild/SOURCES/gsni-${VERSION}.tar.xz | head -5
 
       - name: Build RPM
         run: |
