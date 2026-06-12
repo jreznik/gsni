@@ -233,6 +233,8 @@ class TrayHostApp:
             self._add_tray_icon(model.get_item(i))
 
     def _add_tray_icon(self, item):
+        if item in self.item_widgets:
+            return  # already added
         row = Gtk.Box.new(Gtk.Orientation.HORIZONTAL, 6)
 
         image = Gtk.Image.new()
