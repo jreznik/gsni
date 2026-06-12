@@ -58,6 +58,8 @@ main(int argc, char *argv[])
     g_application_register(app, NULL, NULL);
     bus = g_application_get_dbus_connection(app);
 
+    loop = g_main_loop_new(NULL, FALSE);
+
     /* Create tray icon */
     item = gsni_item_new("simple-tray", bus, NULL);
     gsni_item_set_title(item, "Simple Tray Demo");
@@ -75,12 +77,12 @@ main(int argc, char *argv[])
     g_action_map_add_action(G_ACTION_MAP(actions), G_ACTION(open_action));
 
     quit_action = g_simple_action_new("quit", NULL);
-    g_signal_connect(quit_action, "activate", G_CALLBACK(on_quit_cb), NULL);
+    g_signal_connect(quit_action, "activate", G_CALLBACK(on_quit_cb), loop);
     g_action_map_add_action(G_ACTION_MAP(actions), G_ACTION(quit_action));
 
     menu = g_menu_new();
-    g_menu_append(menu, "Open", "simple.open");
-    g_menu_append(menu, "Quit", "simple.quit");
+    g_menu_append(menu, "Open", "open");
+    g_menu_append(menu, "Quit", "quit");
 
     gsni_item_set_action_group(item, G_ACTION_GROUP(actions));
     gsni_item_set_menu(item, G_MENU_MODEL(menu));
@@ -92,11 +94,10 @@ main(int argc, char *argv[])
     gsni_item_register(item, NULL);
 
     g_print("Tray icon with menu registered.\n"
-            "Right-click to see the context menu.\n"
+            "Click the icon to see the context menu.\n"
             "Scroll to test scroll events.\n"
             "Press Ctrl+C to exit.\n");
 
-    loop = g_main_loop_new(NULL, FALSE);
     g_main_loop_run(loop);
 
     return 0;

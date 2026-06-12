@@ -197,11 +197,33 @@ dbusmenu_method_call(GDBusConnection       *connection,
 
         g_variant_get(params, "(i&s@vu)", &id, &event_id, NULL, &timestamp);
 
-        if (g_str_equal(event_id, "clicked") && self->action_group) {
-            /* Walk to the item and activate its action */
-            g_autofree gchar *action = NULL;
-            g_autoptr(GVariant) target = NULL;
-            /* TODO: walk GMenuModel using decode_parent / decode_position */
+        if (g_str_equal(event_id, "clicked") && self->action_group &&
+            id > 0) {
+            gint pos = decode_position((guint32)id);
+            GMenuModel *target_model = self->menu_model;
+
+            if (pos >= 0 && pos < g_menu_model_get_n_items(target_model)) {
+                GMenuAttributeIter *iter =
+                    g_menu_model_iterate_item_attributes(target_model, pos);
+                const gchar *attr;
+                GVariant *val;
+                g_autofree gchar *action_name = NULL;
+                g_autoptr(GVariant) action_target = NULL;
+
+                while (g_menu_attribute_iter_get_next(iter, &attr, &val)) {
+                    if (g_str_equal(attr, "action"))
+                        action_name = g_variant_dup_string(val, NULL);
+                    else if (g_str_equal(attr, "target"))
+                        action_target = g_variant_ref(val);
+                    g_variant_unref(val);
+                }
+                g_object_unref(iter);
+
+                if (action_name && g_action_group_has_action(
+                        self->action_group, action_name))
+                    g_action_group_activate_action(
+                        self->action_group, action_name, action_target);
+            }
         }
 
         g_dbus_method_invocation_return_value(invocation, NULL);
