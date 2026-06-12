@@ -60,19 +60,27 @@ automatic tray icon registration and cleanup.
 %autosetup -n gsni-%{version} -p1
 
 %build
-meson setup build \
-    --prefix=%{_prefix} \
-    --libdir=%{_libdir} \
-    --includedir=%{_includedir} \
-    --datadir=%{_datadir} \
-    -Ddocs=false
+%if 0%{?meson:1}
+%meson
+%meson_build
+%else
+meson setup build --prefix=%{_prefix} --libdir=%{_libdir} --includedir=%{_includedir} --datadir=%{_datadir} -Ddocs=false
 ninja -C build
+%endif
 
 %install
+%if 0%{?meson:1}
+%meson_install
+%else
 DESTDIR=%{buildroot} ninja -C build install
+%endif
 
 %check
+%if 0%{?meson:1}
+%meson_test
+%else
 ninja -C build test || true
+%endif
 
 %files -n %{name}1
 %license LICENSE
