@@ -77,7 +77,7 @@ def populate_popover(box, layout_node, bus_name, menu_path, popover,
         type_str = type_val.get_string()
     label_val = props.lookup_value("label", None)
     if label_val:
-        label_str = label_val.dup_string()
+        label_str = label_val.get_string()
     enabled_val = props.lookup_value("enabled", None)
     if enabled_val:
         enabled = enabled_val.get_boolean()
